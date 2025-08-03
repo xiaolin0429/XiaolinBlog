@@ -6,6 +6,15 @@ import { authApi } from '@/lib/api/auth';
 import { User, UserLogin } from '@/types/api';
 import { toast } from 'sonner';
 import { setupTokenRefreshTimer, getCurrentToken } from '@/lib/auth-utils';
+import Cookies from 'js-cookie';
+
+interface SessionDetails {
+  session_id: string;
+  user_id: number;
+  created_at: string;
+  expires_at: string;
+  metadata: Record<string, any>;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -17,11 +26,10 @@ interface AuthContextType {
   isAdmin: boolean;
   token: string | null;
   sessionId: string | null;
+  sessionDetails: SessionDetails | null;
   authStatus: 'authenticated' | 'unauthenticated' | 'checking' | 'error';
   forceAuthCheck: () => Promise<void>;
-  heartbeatEnabled: boolean;
-  setHeartbeatEnabled: (enabled: boolean) => void;
-  triggerHeartbeat: () => Promise<boolean>;
+  fetchSessionDetails: () => Promise<SessionDetails | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,25 +39,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionDetails, setSessionDetails] = useState<SessionDetails | null>(null);
   const [authStatus, setAuthStatus] = useState<'authenticated' | 'unauthenticated' | 'checking' | 'error'>('checking');
-  const [heartbeatEnabled, setHeartbeatEnabled] = useState(true);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatInitializedRef = useRef(false); // 标记心跳是否已初始化
   const router = useRouter();
   const pathname = usePathname();
 
-  // 从Cookie中提取sessionId
+  // 从Cookie中提取sessionId - 使用js-cookie库更可靠
   const getSessionIdFromCookie = useCallback((): string | null => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; blog_auth_session=`);
-    if (parts.length === 2) {
-      return parts.pop()?.split(';').shift() || null;
+    if (typeof window !== 'undefined') {
+      console.log('开始获取Cookie中的sessionId...');
+      console.log('当前所有Cookie:', document.cookie);
+      
+      // 尝试多个可能的Cookie名称
+      const possibleNames = ['blog_auth_session', 'session_id', 'sessionid'];
+      
+      for (const name of possibleNames) {
+        const value = Cookies.get(name);
+        console.log(`检查Cookie ${name}:`, value);
+        if (value) {
+          console.log(`从Cookie获取到sessionId: ${name} = ${value.substring(0, 8)}...`);
+          return value;
+        }
+      }
+      
+      console.log('未找到任何sessionId Cookie');
+      return null;
     }
     return null;
   }, []);
 
-  // 强制认证检查 - 需要先定义，因为performHeartbeat会使用它
+  // 获取会话详情
+  const fetchSessionDetails = useCallback(async (): Promise<SessionDetails | null> => {
+    if (!user || !sessionId) {
+      return null;
+    }
+    
+    try {
+      console.log('获取会话详情...');
+      
+      // 直接使用fetch API发送请求，确保请求能够正确发送
+      const response = await fetch('/api/v1/session/validate', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('会话详情获取成功:', data);
+        
+        if (data.is_valid && data.session_info) {
+          setSessionDetails(data.session_info);
+          // 确保sessionId与后端返回的一致
+          if (data.session_info.session_id !== sessionId) {
+            setSessionId(data.session_info.session_id);
+          }
+          
+          return data.session_info;
+        } else {
+          console.warn('会话无效:', data.error_message);
+          return null;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取会话详情失败:', error);
+      return null;
+    }
+  }, [user, sessionId, token]);
+
+  // 强制认证检查
   const forceAuthCheck = useCallback(async () => {
     setAuthStatus('checking');
     setLoading(true);
@@ -58,45 +122,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentToken = getCurrentToken();
       const currentSessionId = getSessionIdFromCookie();
       
+      console.log('强制认证检查 - 当前会话信息:', {
+        hasToken: !!currentToken,
+        sessionId: currentSessionId ? `${currentSessionId.substring(0, 8)}...` : '无'
+      });
+      
       setToken(currentToken);
       setSessionId(currentSessionId);
       
-      if (currentToken && currentSessionId) {
-        // 执行三重验证：JWT + Session + Cookie
-        const response = await fetch('/api/v1/heartbeat/force-check', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentToken}`,
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            client_timestamp: new Date().toISOString(),
-            user_agent: navigator.userAgent
-          })
-        });
-        
-        if (response.ok) {
-          const checkResult = await response.json();
+      if (currentToken) {
+        // 通过获取用户信息来验证认证状态
+        const userResponse = await authApi.getCurrentUser();
+        if (userResponse.data) {
+          setUser(userResponse.data);
+          setAuthStatus('authenticated');
           
-          if (checkResult.authentication_valid) {
-            // 三重验证通过，获取用户信息
-            const userResponse = await authApi.getCurrentUser();
-            if (userResponse.data) {
-              setUser(userResponse.data);
-              setAuthStatus('authenticated');
-            } else {
-              throw new Error('无法获取用户信息');
-            }
-          } else {
-            // 验证失败
-            console.warn('三重验证失败:', checkResult);
-            setUser(null);
-            setAuthStatus('error');
-            localStorage.removeItem('access_token');
-          }
+          // 获取会话详情
+          await fetchSessionDetails();
         } else {
-          throw new Error('认证检查请求失败');
+          throw new Error('无法获取用户信息');
         }
       } else {
         // 缺少必要的认证信息
@@ -112,90 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [getSessionIdFromCookie]);
-
-  // 执行心跳检测 - 现在可以安全地使用forceAuthCheck
-  const performHeartbeat = useCallback(async (): Promise<boolean> => {
-    if (!user || !token || !sessionId || !heartbeatEnabled) {
-      return false;
-    }
-
-    try {
-      console.log('执行心跳检测...');
-      const response = await fetch('/api/v1/heartbeat/ping', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          client_timestamp: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-          page_url: window.location.href
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('心跳检测成功:', {
-          status: data.status,
-          user_id: data.user_id,
-          session_id: data.session_id?.substring(0, 8) + '...',
-          next_ping_in: data.next_ping_in
-        });
-        return true;
-      } else if (response.status === 401 || response.status === 403) {
-        console.warn('心跳检测认证失败，执行强制认证检查');
-        await forceAuthCheck();
-        return false;
-      } else {
-        console.error('心跳检测失败，状态码:', response.status);
-        return false;
-      }
-    } catch (error) {
-      console.error('心跳检测异常:', error);
-      return false;
-    }
-  }, [user, token, sessionId, heartbeatEnabled, forceAuthCheck]);
-
-  // 启动心跳定时器
-  const startHeartbeat = useCallback(() => {
-    // 如果已经有定时器在运行，不要重复启动
-    if (heartbeatTimerRef.current) {
-      console.log('心跳检测已在运行，跳过启动');
-      return;
-    }
-
-    if (!heartbeatEnabled || !user) {
-      console.log('心跳检测条件不满足，跳过启动');
-      return;
-    }
-
-    console.log('启动心跳检测，间隔: 5分钟');
-    
-    // 立即执行一次心跳检测
-    performHeartbeat();
-    
-    // 设置定时器，每5分钟执行一次
-    heartbeatTimerRef.current = setInterval(() => {
-      performHeartbeat();
-    }, 5 * 60 * 1000); // 5分钟
-  }, [heartbeatEnabled, user, performHeartbeat]);
-
-  // 停止心跳定时器
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatTimerRef.current) {
-      console.log('停止心跳检测');
-      clearInterval(heartbeatTimerRef.current);
-      heartbeatTimerRef.current = null;
-    }
-  }, []);
-
-  // 手动触发心跳检测
-  const triggerHeartbeat = useCallback(() => {
-    return performHeartbeat();
-  }, [performHeartbeat]);
+  }, [getSessionIdFromCookie, fetchSessionDetails]);
 
   // 检查用户认证状态 - 通过获取当前用户信息来验证认证状态
   const checkAuth = async (skipLogoutOnError: boolean = false) => {
@@ -269,64 +230,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth(true);
   }, []);
 
-  // 当用户状态改变时，管理刷新定时器和心跳检测
+  // 当用户状态改变时，管理刷新定时器
   useEffect(() => {
     if (user) {
       // 用户已登录，启动自动刷新
       startRefreshTimer();
-      
-      // 只在心跳未初始化时启动心跳检测
-      if (!heartbeatInitializedRef.current) {
-        console.log('用户登录，首次启动心跳检测');
-        startHeartbeat();
-        heartbeatInitializedRef.current = true;
-      }
     } else {
-      // 用户未登录，停止自动刷新和心跳检测
+      // 用户未登录，停止自动刷新
       stopRefreshTimer();
-      stopHeartbeat();
-      heartbeatInitializedRef.current = false;
     }
 
     // 组件卸载时清理定时器
     return () => {
       stopRefreshTimer();
-      stopHeartbeat();
-      heartbeatInitializedRef.current = false;
     };
-  }, [user]); // 只依赖 user 状态，避免函数重新创建导致的重复启停
+  }, [user]);
 
-  // 监听心跳启用状态变化
-  useEffect(() => {
-    if (user && heartbeatEnabled && !heartbeatTimerRef.current) {
-      // 心跳被启用且当前没有运行，启动心跳
-      console.log('心跳检测被启用，启动心跳');
-      startHeartbeat();
-      heartbeatInitializedRef.current = true;
-    } else if (!heartbeatEnabled && heartbeatTimerRef.current) {
-      // 心跳被禁用且当前正在运行，停止心跳
-      console.log('心跳检测被禁用，停止心跳');
-      stopHeartbeat();
-      heartbeatInitializedRef.current = false;
-    }
-  }, [heartbeatEnabled, user]);
 
-  // 页面可见性变化时的处理
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && user && heartbeatEnabled) {
-        // 页面变为可见时，立即执行一次心跳检测
-        console.log('页面变为可见，执行心跳检测');
-        performHeartbeat();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user, heartbeatEnabled, performHeartbeat]);
 
   // 监听用户状态变化，当用户变为null且不在加载状态时，检查是否需要跳转
   useEffect(() => {
@@ -358,6 +278,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (response.data.user) {
           setUser(response.data.user);
           setAuthStatus('authenticated');
+          
+          // 获取会话详情
+          await fetchSessionDetails();
         }
         
         console.log('登录成功:', {
@@ -433,31 +356,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, router, stopRefreshTimer]);
 
-  // Cookie监控配置
-  const cookieMonitorConfig = {
-    checkInterval: 5000, // 5秒检查一次
-    cookieName: 'blog_auth_session',
-    onCookieCleared: () => {
-      console.warn('检测到认证Cookie被清除，强制登出');
-      logout();
-    },
-    onCookieChanged: (oldValue: string | null, newValue: string | null) => {
-      console.log('Cookie状态变化:', {
-        oldValue: oldValue ? `${oldValue.substring(0, 8)}...` : null,
-        newValue: newValue ? `${newValue.substring(0, 8)}...` : null
-      });
-      
-      // 如果Cookie值发生变化，更新sessionId
-      setSessionId(newValue);
-      
-      // 如果用户已登录但Cookie被清除，需要重新验证
-      if (user && oldValue && !newValue) {
-        console.warn('用户已登录但Cookie被清除，执行强制认证检查');
-        forceAuthCheck();
-      }
-    }
-  };
-
   const value: AuthContextType = {
     user,
     loading,
@@ -468,11 +366,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin: !!user?.is_superuser,
     token,
     sessionId,
+    sessionDetails,
     authStatus,
     forceAuthCheck,
-    heartbeatEnabled,
-    setHeartbeatEnabled,
-    triggerHeartbeat,
+    fetchSessionDetails,
   };
 
   return (

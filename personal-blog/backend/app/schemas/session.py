@@ -63,21 +63,6 @@ class SessionValidationResponse(BaseModel):
     error_message: Optional[str] = Field(default=None, description="错误信息")
 
 
-class HeartbeatRequest(BaseModel):
-    """心跳请求模型"""
-    timestamp: Optional[datetime] = Field(default=None, description="客户端时间戳")
-    activity_data: Optional[Dict[str, Any]] = Field(default_factory=dict, description="活动数据")
-
-
-class HeartbeatResponse(BaseModel):
-    """心跳响应模型"""
-    status: str = Field(..., description="状态")
-    user_id: int = Field(..., description="用户ID")
-    session_id: str = Field(..., description="会话ID")
-    timestamp: datetime = Field(..., description="服务器时间戳")
-    session_info: Optional[SessionInfo] = Field(default=None, description="会话信息")
-
-
 class SessionExtendRequest(BaseModel):
     """会话延期请求模型"""
     session_id: str = Field(..., description="会话ID")

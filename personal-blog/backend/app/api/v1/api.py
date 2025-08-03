@@ -2,7 +2,7 @@
 API v1 主路由
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import users, posts, categories, tags, comments, auth, logs, site_config, session, heartbeat, cookie_monitor
+from app.api.v1.endpoints import users, posts, categories, tags, comments, auth, logs, site_config, session
 
 api_router = APIRouter()
 
@@ -12,11 +12,6 @@ api_router.include_router(auth.router, prefix="/auth", tags=["认证"])
 # 会话管理路由
 api_router.include_router(session.router, prefix="/session", tags=["会话管理"])
 
-# 心跳检测路由
-api_router.include_router(heartbeat.router, prefix="/heartbeat", tags=["心跳检测"])
-
-# Cookie监控路由
-api_router.include_router(cookie_monitor.router, prefix="/cookie-monitor", tags=["Cookie监控"])
 
 # 用户相关路由
 api_router.include_router(users.router, prefix="/users", tags=["用户"])

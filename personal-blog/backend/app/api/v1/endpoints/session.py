@@ -8,13 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.session import session_manager
-from app.core.heartbeat_manager import heartbeat_manager
 from app.api.v1.endpoints.deps import get_current_user, get_current_active_superuser
 from app.schemas.session import (
     SessionInfo, SessionListResponse, SessionValidationRequest, 
-    SessionValidationResponse, HeartbeatRequest, HeartbeatResponse,
-    SessionExtendRequest, SessionStatsResponse, SessionCleanupResponse,
-    SessionActivity
+    SessionValidationResponse, SessionExtendRequest, SessionStatsResponse, 
+    SessionCleanupResponse, SessionActivity
 )
 from app.schemas.user import User
 
@@ -61,80 +59,6 @@ def _extract_session_id_from_request(request: Request) -> str:
                 pass
     
     return session_id or ""
-
-
-@router.post("/heartbeat", response_model=HeartbeatResponse)
-def auth_heartbeat(
-    request: Request,
-    heartbeat_data: HeartbeatRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    认证态心跳确认接口
-    前端定期调用此接口确认登录状态
-    """
-    session_id = _extract_session_id_from_request(request)
-    
-    if not session_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无法获取会话信息"
-        )
-    
-    # 使用心跳管理器验证请求
-    validation_result = heartbeat_manager.validate_heartbeat_request(
-        session_id, 
-        current_user.id,
-        heartbeat_data.timestamp.isoformat() if heartbeat_data.timestamp else None
-    )
-    
-    if not validation_result.get("is_valid"):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=validation_result.get("message", "心跳验证失败")
-        )
-    
-    # 准备客户端信息
-    ip_address, user_agent = _get_client_info(request)
-    client_info = {
-        "timestamp": heartbeat_data.timestamp.isoformat() if heartbeat_data.timestamp else None,
-        "ip_address": ip_address,
-        "user_agent": user_agent,
-        "page_url": heartbeat_data.activity_data.get("page_url", ""),
-        "activity_data": heartbeat_data.activity_data
-    }
-    
-    # 记录心跳
-    heartbeat_result = heartbeat_manager.record_heartbeat(
-        session_id=session_id,
-        user_id=current_user.id,
-        client_info=client_info,
-        server_timestamp=datetime.utcnow()
-    )
-    
-    # 更新会话活动时间
-    session_manager.update_session_activity(session_id)
-
-    # 获取会话详细信息
-    session_info = session_manager.get_session(session_id)
-    
-    # 检查心跳状态
-    heartbeat_status = heartbeat_manager.check_session_heartbeat_status(session_id)
-    
-    return HeartbeatResponse(
-        status="active" if heartbeat_status.get("is_alive") else "warning",
-        user_id=current_user.id,
-        session_id=session_id,
-        timestamp=datetime.utcnow(),
-        session_info=SessionInfo(**session_info) if session_info else None,
-        heartbeat_info={
-            "heartbeat_id": heartbeat_result.get("heartbeat_id"),
-            "next_heartbeat_in": heartbeat_result.get("next_heartbeat_in"),
-            "heartbeat_count": heartbeat_status.get("heartbeat_count", 0),
-            "last_heartbeat": heartbeat_status.get("last_heartbeat")
-        }
-    )
 
 
 @router.get("/validate", response_model=SessionValidationResponse)

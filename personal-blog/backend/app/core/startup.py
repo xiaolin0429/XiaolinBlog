@@ -12,7 +12,6 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.core.session import session_manager
 from app.core.token_blacklist import token_blacklist_manager
-from app.core.heartbeat_manager import heartbeat_manager
 from app.core.logger_utils import setup_logging, get_security_logger
 
 logger = logging.getLogger(__name__)
@@ -60,20 +59,6 @@ async def init_token_blacklist():
         raise
 
 
-async def init_heartbeat_manager():
-    """初始化心跳管理器"""
-    try:
-        # 初始化心跳服务
-        await heartbeat_manager.initialize()
-        logger.info("心跳管理器初始化完成")
-        
-        # 启动心跳监控任务
-        asyncio.create_task(heartbeat_manager.start_monitoring())
-        logger.info("心跳监控任务已启动")
-        
-    except Exception as e:
-        logger.error(f"心跳管理器初始化失败: {e}")
-        raise
 
 
 async def init_security_logging():
@@ -92,8 +77,6 @@ async def init_security_logging():
                 "features": [
                     "JWT Token + Session + Cookie 三重验证",
                     "会话管理",
-                    "心跳检测",
-                    "Cookie监控",
                     "令牌黑名单"
                 ]
             }
@@ -108,10 +91,6 @@ async def init_security_logging():
 async def cleanup_resources():
     """清理资源"""
     try:
-        # 停止心跳监控
-        await heartbeat_manager.stop_monitoring()
-        logger.info("心跳监控已停止")
-        
         # 会话管理器清理（如果需要的话）
         logger.info("会话管理器已清理")
         
@@ -142,7 +121,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await init_database()
         await init_session_manager()
         await init_token_blacklist()
-        await init_heartbeat_manager()
         await init_security_logging()
         
         logger.info("增强鉴权系统初始化完成")
@@ -186,10 +164,7 @@ async def periodic_cleanup():
             # 清理过期令牌
             expired_tokens = token_blacklist_manager.cleanup_expired_tokens()
             
-            # 清理过期心跳记录
-            expired_heartbeats = await heartbeat_manager.cleanup_expired_records()
-            
-            logger.info(f"定期清理完成: 会话{expired_sessions}个, 令牌{expired_tokens}个, 心跳记录{expired_heartbeats}个")
+            logger.info(f"定期清理完成: 会话{expired_sessions}个, 令牌{expired_tokens}个")
             
             # 记录清理统计
             security_logger = get_security_logger()
@@ -199,7 +174,6 @@ async def periodic_cleanup():
                 details={
                     "expired_sessions": expired_sessions,
                     "expired_tokens": expired_tokens,
-                    "expired_heartbeats": expired_heartbeats
                 }
             )
             
@@ -265,8 +239,6 @@ def print_startup_banner():
     ║                                                              ║
     ║  🔐 JWT Token + Session + Cookie 三重验证                    ║
     ║  📊 实时会话管理和监控                                        ║
-    ║  💓 心跳检测机制                                             ║
-    ║  🍪 Cookie状态监控                                          ║
     ║  🛡️  令牌黑名单防护                                          ║
     ║  📝 安全日志记录                                             ║
     ║                                                              ║

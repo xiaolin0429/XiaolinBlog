@@ -1,14 +1,18 @@
-// 导出所有基础信息配置相关组件
-export { BasicInfoConfigRefactored } from './BasicInfoConfigRefactored'
-export { FanMenuSystem } from './FanMenuSystem'
+// 主组件
 export { ConfigInputPanels } from './ConfigInputPanels'
 export { FanMenuBasicInfoConfig } from './FanMenuBasicInfoConfig'
+export { BasicInfoConfigPage } from '../basic-info-config'
 
-// 导出类型
-export type { BasicInfoConfigRefactorProps } from './BasicInfoConfigRefactored'
+// 子组件
+export { ConfigCard } from './config-card'
+export { ConfigInputForm } from './config-input-form'
+export { ConfigPreview } from './config-preview'
 
-// 导出常量
-export { BASIC_INFO_ITEMS } from './constants'
+// 配置和工具
+export { configItems } from './config-items'
+export { ConfigValidator } from './validation-utils'
+export { useConfigState } from './use-config-state'
 
-// 导出hooks
-export { useBasicInfoConfig } from './hooks/useBasicInfoConfigRefactored'
+// 类型定义
+export type { ConfigItem } from './config-items'
+export type { ValidationResult } from './validation-utils'

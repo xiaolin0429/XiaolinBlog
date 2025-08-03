@@ -49,9 +49,6 @@ class Settings(BaseSettings):
     SESSION_CLEANUP_INTERVAL: int = 60 * 60  # 会话清理间隔（1小时）
     
     # 心跳检测配置
-    HEARTBEAT_INTERVAL: int = 5 * 60  # 心跳间隔（5分钟）
-    HEARTBEAT_TIMEOUT: int = 10  # 心跳超时（10秒）
-    HEARTBEAT_MAX_RETRIES: int = 3  # 心跳最大重试次数
     
     # CORS配置 - 添加更多可能的前端地址
     BACKEND_CORS_ORIGINS: List[str] = [

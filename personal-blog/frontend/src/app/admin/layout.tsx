@@ -19,7 +19,8 @@ import {
   X,
   Home,
   LogOut,
-  Cog
+  Cog,
+  Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
