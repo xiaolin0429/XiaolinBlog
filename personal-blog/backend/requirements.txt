@@ -1,0 +1,44 @@
+# Web框架和服务器
+fastapi==0.116.1
+uvicorn==0.35.0
+
+# 数据库相关
+sqlalchemy==2.0.42
+psycopg2-binary==2.9.10
+alembic==1.16.4
+
+# 缓存和任务队列
+celery==5.5.3
+redis==6.2.0
+
+# 认证和安全
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.20
+
+# 数据验证和配置
+pydantic==2.11.7
+pydantic-settings==2.0.3
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# 邮箱验证
+email-validator==2.1.0
+
+# HTTP客户端（用于调试和测试）
+requests==2.31.0
+httpx==0.25.2
+
+# 文件处理
+aiofiles==23.2.1
+
+# 图像处理（头像上传等）
+pillow==10.1.0
+
+# 开发和测试
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# 日志和监控
+structlog==23.2.0

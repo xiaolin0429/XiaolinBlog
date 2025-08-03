@@ -1,0 +1,5 @@
+export { BasicInfoAnimationContainer } from './BasicInfoAnimationContainer'
+export { BasicInfoCardSelector } from './BasicInfoCardSelector'
+export { BasicInfoConfigForm } from './BasicInfoConfigForm'
+export { BasicInfoPreview } from './BasicInfoPreview'
+export { BasicInfoConfigTips } from './BasicInfoConfigTips'

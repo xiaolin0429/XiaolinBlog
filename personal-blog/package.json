@@ -1,0 +1,32 @@
+{
+  "name": "personal-blog-system",
+  "version": "1.0.0",
+  "description": "基于Next.js和FastAPI的现代化个人博客系统",
+  "scripts": {
+    "dev": "./start-dev.sh",
+    "test:integration": "node test-integration.js",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:start": "cd frontend && npm start",
+    "backend:dev": "cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "install:all": "cd frontend && npm install && cd ../backend && pip install -r requirements.txt"
+  },
+  "keywords": [
+    "blog",
+    "nextjs",
+    "fastapi",
+    "typescript",
+    "python",
+    "fullstack"
+  ],
+  "author": "个人博客系统",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/personal-blog"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.8.0"
+  }
+}
