@@ -41,6 +41,11 @@ export class ConfigValidator {
     
     if (value && value.trim().length > 0) {
       try {
+        // 如果是API端点URL，直接认为有效
+        if (value.startsWith('/api/v1/image/')) {
+          return { isValid: true, errors: [] }
+        }
+        
         new URL(value)
         // 检查是否是有效的图片URL
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.ico']

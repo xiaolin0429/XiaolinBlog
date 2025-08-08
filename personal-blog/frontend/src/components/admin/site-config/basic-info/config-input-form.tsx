@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { ConfigItem } from './config-items'
+import { ImageUploadField } from './components/ImageUploadField'
 
 interface ConfigInputFormProps {
   configItem: ConfigItem
@@ -46,6 +47,12 @@ export function ConfigInputForm({ configItem, value, onChange, errors }: ConfigI
             ))}
           </SelectContent>
         </Select>
+      ) : configItem.type === 'file' ? (
+        <ImageUploadField
+          config={configItem}
+          value={value}
+          onChange={onChange}
+        />
       ) : (
         <Input
           id={configItem.key}

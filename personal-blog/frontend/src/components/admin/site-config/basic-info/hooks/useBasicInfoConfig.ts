@@ -158,7 +158,7 @@ export function getConfigDisplayValue(
   
   // 特殊字段的显示处理
   switch (field) {
-    case 'language':
+    case 'site_language':
       const languageMap: Record<string, string> = {
         'zh-CN': '简体中文',
         'zh-TW': '繁体中文',
@@ -168,7 +168,7 @@ export function getConfigDisplayValue(
       };
       return languageMap[value] || value;
       
-    case 'timezone':
+    case 'site_timezone':
       const timezoneMap: Record<string, string> = {
         'Asia/Shanghai': '北京时间 (UTC+8)',
         'Asia/Tokyo': '东京时间 (UTC+9)',

@@ -35,6 +35,7 @@ interface SeoSettings {
 interface OtherSettings {
   copyright: string
   icp: string
+  publicSecurity: string
   notice: string
 }
 
@@ -65,13 +66,41 @@ export function useSiteConfig() {
     return config?.value || defaultValue
   }
 
-  const getSiteInfo = (): SiteInfo => ({
-    title: getConfigValue('site_title', '个人博客'),
-    subtitle: getConfigValue('site_subtitle', '分享技术与生活'),
-    description: getConfigValue('site_description', '这是一个个人技术博客'),
-    keywords: getConfigValue('site_keywords', '博客,技术,编程'),
-    logo: getConfigValue('site_logo', '')
-  })
+  const getSiteInfo = (): SiteInfo => {
+    // 处理logo数据
+    const logoValue = getConfigValue('site_logo', '')
+    let logoUrl = ''
+    
+    if (logoValue) {
+      try {
+        // 尝试解析JSON格式的图片数据
+        const logoData = JSON.parse(logoValue)
+        if (logoData.data && logoData.content_type) {
+          // 如果是base64格式的图片数据，创建blob URL
+          const binaryString = atob(logoData.data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          const blob = new Blob([bytes], { type: logoData.content_type })
+          logoUrl = URL.createObjectURL(blob)
+        }
+      } catch (e) {
+        // 如果不是JSON格式，可能是旧的URL格式
+        if (logoValue.startsWith('http')) {
+          logoUrl = logoValue
+        }
+      }
+    }
+    
+    return {
+      title: getConfigValue('site_title', '个人博客'),
+      subtitle: getConfigValue('site_subtitle', '分享技术与生活'),
+      description: getConfigValue('site_description', '这是一个个人技术博客'),
+      keywords: getConfigValue('site_keywords', '博客,技术,编程'),
+      logo: logoUrl
+    }
+  }
 
 
   const getSocialLinks = (): SocialLinks => ({
@@ -88,8 +117,9 @@ export function useSiteConfig() {
   })
 
   const getOtherSettings = (): OtherSettings => ({
-    copyright: getConfigValue('other_copyright', '保留所有权利。'),
-    icp: getConfigValue('other_icp', ''),
+    copyright: getConfigValue('site_copyright', ''),
+    icp: getConfigValue('site_icp', ''),
+    publicSecurity: getConfigValue('site_public_security', ''),
     notice: getConfigValue('other_notice', '')
   })
 

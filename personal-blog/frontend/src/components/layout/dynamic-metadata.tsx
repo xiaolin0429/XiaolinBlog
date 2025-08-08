@@ -52,6 +52,51 @@ export function DynamicMetadata() {
     updatePropertyTag('og:description', siteInfo.description)
     updatePropertyTag('og:type', 'website')
 
+    // 动态更新favicon
+    const updateFavicon = async () => {
+      // 移除现有的favicon链接
+      const existingFavicons = document.querySelectorAll('link[rel*="icon"]')
+      existingFavicons.forEach(link => link.remove())
+
+      try {
+        // 尝试获取自定义favicon
+        const response = await fetch('/api/v1/image/site-favicon')
+        
+        if (response.ok) {
+          // 如果有自定义favicon，使用API端点
+          const faviconLink = document.createElement('link')
+          faviconLink.rel = 'icon'
+          faviconLink.type = 'image/x-icon'
+          faviconLink.href = '/api/v1/image/site-favicon'
+          document.head.appendChild(faviconLink)
+
+          // 同时添加PNG格式的favicon（现代浏览器支持）
+          const pngFaviconLink = document.createElement('link')
+          pngFaviconLink.rel = 'icon'
+          pngFaviconLink.type = 'image/png'
+          pngFaviconLink.href = '/api/v1/image/site-favicon'
+          document.head.appendChild(pngFaviconLink)
+        } else {
+          // 如果没有自定义favicon，使用默认favicon
+          const defaultFaviconLink = document.createElement('link')
+          defaultFaviconLink.rel = 'icon'
+          defaultFaviconLink.type = 'image/x-icon'
+          defaultFaviconLink.href = '/favicon.ico'
+          document.head.appendChild(defaultFaviconLink)
+        }
+      } catch (error) {
+        // 出错时使用默认favicon
+        const defaultFaviconLink = document.createElement('link')
+        defaultFaviconLink.rel = 'icon'
+        defaultFaviconLink.type = 'image/x-icon'
+        defaultFaviconLink.href = '/favicon.ico'
+        document.head.appendChild(defaultFaviconLink)
+      }
+    }
+
+    // 更新favicon
+    updateFavicon()
+
     // 添加Google Analytics
     if (seoSettings.googleAnalytics) {
       // 检查是否已经添加了GA脚本

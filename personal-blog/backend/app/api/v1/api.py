@@ -2,7 +2,7 @@
 API v1 主路由
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import users, posts, categories, tags, comments, auth, logs, site_config, session
+from app.api.v1.endpoints import users, posts, categories, tags, comments, auth, logs, site_config, session, image_upload, image_serve
 
 api_router = APIRouter()
 
@@ -33,3 +33,9 @@ api_router.include_router(logs.router, prefix="/logs", tags=["日志管理"])
 
 # 网站配置路由
 api_router.include_router(site_config.router, prefix="/site-config", tags=["网站配置"])
+
+# 图片上传路由
+api_router.include_router(image_upload.router, prefix="/image", tags=["图片上传"])
+
+# 图片服务路由
+api_router.include_router(image_serve.router, prefix="/image", tags=["图片服务"])

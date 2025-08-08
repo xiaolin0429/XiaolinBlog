@@ -167,11 +167,39 @@ def batch_update_configs(
     批量更新配置项
     """
     try:
-        configs = crud.site_config.batch_update(db=db, configs=batch_data.configs)
+        # 验证批量更新数据
+        if not batch_data.configs:
+            raise HTTPException(
+                status_code=400,
+                detail="批量更新数据不能为空"
+            )
+        
+        # 将Pydantic对象转换为字典格式，供CRUD层使用
+        config_dicts = []
+        for config in batch_data.configs:
+            config_dicts.append({
+                'key': config.key,
+                'value': config.value
+            })
+        
+        # 执行批量更新
+        configs = crud.site_config.batch_update(db=db, configs=config_dicts)
+        
+        if not configs:
+            raise HTTPException(
+                status_code=404,
+                detail="没有找到可更新的配置项"
+            )
+        
         return configs
+        
+    except HTTPException:
+        # 重新抛出HTTP异常
+        raise
     except Exception as e:
+        # 捕获其他异常并转换为HTTP异常
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"批量更新失败: {str(e)}"
         )
 

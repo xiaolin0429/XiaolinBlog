@@ -16,13 +16,13 @@ import {
 } from 'lucide-react';
 import { BasicInfoCardItem } from './types';
 
-/** 基础信息配置项 */
+/** 基础信息配置项 - 修正键名与数据库一致 */
 export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
   {
     id: 'site_title',
     key: 'site_title',
     label: '网站标题',
-    field: 'title',
+    field: 'site_title',
     icon: Type,
     description: '网站的主标题，显示在浏览器标签页和搜索结果中',
     required: true,
@@ -34,7 +34,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_subtitle',
     key: 'site_subtitle',
     label: '网站副标题',
-    field: 'subtitle',
+    field: 'site_subtitle',
     icon: FileText,
     description: '网站的副标题或标语，用于补充说明网站主题',
     required: false,
@@ -46,7 +46,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_description',
     key: 'site_description',
     label: '网站描述',
-    field: 'description',
+    field: 'site_description',
     icon: FileText,
     description: '网站的详细描述，用于SEO和搜索引擎优化',
     required: true,
@@ -58,7 +58,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_logo',
     key: 'site_logo',
     label: '网站Logo',
-    field: 'logo',
+    field: 'site_logo',
     icon: Image,
     description: '网站的Logo图片URL，建议使用PNG格式',
     required: false,
@@ -69,7 +69,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_favicon',
     key: 'site_favicon',
     label: '网站图标',
-    field: 'favicon',
+    field: 'site_favicon',
     icon: Star,
     description: '网站的Favicon图标URL，显示在浏览器标签页',
     required: false,
@@ -80,7 +80,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_language',
     key: 'site_language',
     label: '网站语言',
-    field: 'language',
+    field: 'site_language',
     icon: Languages,
     description: '网站的主要语言设置',
     required: true,
@@ -98,7 +98,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_timezone',
     key: 'site_timezone',
     label: '时区设置',
-    field: 'timezone',
+    field: 'site_timezone',
     icon: Clock,
     description: '网站的时区设置，影响时间显示',
     required: true,
@@ -117,7 +117,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_copyright',
     key: 'site_copyright',
     label: '版权信息',
-    field: 'copyright',
+    field: 'site_copyright',
     icon: Copyright,
     description: '网站的版权声明信息',
     required: false,
@@ -129,7 +129,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_icp',
     key: 'site_icp',
     label: 'ICP备案号',
-    field: 'icp',
+    field: 'site_icp',
     icon: Shield,
     description: '网站的ICP备案号（中国大陆网站必填）',
     required: false,
@@ -140,7 +140,7 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
     id: 'site_public_security',
     key: 'site_public_security',
     label: '公安备案号',
-    field: 'publicSecurity',
+    field: 'site_public_security',
     icon: ShieldCheck,
     description: '网站的公安备案号（中国大陆网站必填）',
     required: false,
@@ -149,18 +149,18 @@ export const BASIC_INFO_ITEMS: BasicInfoCardItem[] = [
   }
 ];
 
-/** 默认基础信息配置 */
+/** 默认基础信息配置 - 修正键名与数据库一致 */
 export const DEFAULT_BASIC_INFO_CONFIG = {
-  title: '',
-  subtitle: '',
-  description: '',
-  logo: '',
-  favicon: '',
-  language: 'zh-CN',
-  timezone: 'Asia/Shanghai',
-  copyright: '',
-  icp: '',
-  publicSecurity: ''
+  site_title: '',
+  site_subtitle: '',
+  site_description: '',
+  site_logo: '',
+  site_favicon: '',
+  site_language: 'zh-CN',
+  site_timezone: 'Asia/Shanghai',
+  site_copyright: '',
+  site_icp: '',
+  site_public_security: ''
 };
 
 /** 验证规则基础接口 */
@@ -180,54 +180,54 @@ interface PatternValidationRule extends BaseValidationRule {
   pattern?: RegExp;
 }
 
-/** 表单验证规则 */
+/** 表单验证规则 - 修正键名与数据库一致 */
 export const BASIC_INFO_VALIDATION_RULES: Record<string, LengthValidationRule | PatternValidationRule> = {
-  title: {
+  site_title: {
     required: true,
     minLength: 1,
     maxLength: 60,
     message: '网站标题为必填项，长度不能超过60个字符'
   },
-  subtitle: {
+  site_subtitle: {
     required: false,
     maxLength: 100,
     message: '网站副标题长度不能超过100个字符'
   },
-  description: {
+  site_description: {
     required: true,
     minLength: 10,
     maxLength: 200,
     message: '网站描述为必填项，长度应在10-200个字符之间'
   },
-  logo: {
+  site_logo: {
     required: false,
     pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|svg)$/i,
     message: 'Logo必须是有效的图片URL'
   },
-  favicon: {
+  site_favicon: {
     required: false,
     pattern: /^https?:\/\/.+\.(ico|png)$/i,
     message: 'Favicon必须是有效的图标URL'
   },
-  language: {
+  site_language: {
     required: true,
     message: '请选择网站语言'
   },
-  timezone: {
+  site_timezone: {
     required: true,
     message: '请选择时区设置'
   },
-  copyright: {
+  site_copyright: {
     required: false,
     maxLength: 100,
     message: '版权信息长度不能超过100个字符'
   },
-  icp: {
+  site_icp: {
     required: false,
     pattern: /^[\u4e00-\u9fa5\d\-]+$/,
     message: 'ICP备案号格式不正确'
   },
-  publicSecurity: {
+  site_public_security: {
     required: false,
     pattern: /^[\u4e00-\u9fa5\d\-]+$/,
     message: '公安备案号格式不正确'

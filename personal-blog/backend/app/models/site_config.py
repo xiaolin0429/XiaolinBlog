@@ -19,6 +19,7 @@ class ConfigDataType(str, enum.Enum):
     JSON = "json"
     URL = "url"
     EMAIL = "email"
+    BINARY = "binary"
 
 
 class SiteConfig(Base):

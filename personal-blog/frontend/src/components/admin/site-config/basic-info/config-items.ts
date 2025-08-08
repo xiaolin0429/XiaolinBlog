@@ -8,10 +8,12 @@ export interface ConfigItem {
   label: string
   description: string
   icon: React.ComponentType<any>
-  type: 'text' | 'textarea' | 'select' | 'url'
+  type: 'text' | 'textarea' | 'select' | 'url' | 'file'
   placeholder: string
   options?: { value: string; label: string }[]
   gradient: string
+  accept?: string // 用于文件上传的文件类型限制
+  maxSize?: number // 用于文件上传的大小限制（字节）
 }
 
 export const configItems: ConfigItem[] = [
@@ -43,21 +45,34 @@ export const configItems: ConfigItem[] = [
     gradient: 'from-green-500 to-green-600'
   },
   {
+    key: 'site_keywords',
+    label: '网站关键词',
+    description: '网站的关键词，用于SEO优化，多个关键词用逗号分隔',
+    icon: FileText,
+    type: 'text',
+    placeholder: '博客,技术,编程,分享',
+    gradient: 'from-emerald-500 to-emerald-600'
+  },
+  {
     key: 'site_logo',
     label: '网站Logo',
-    description: '网站的Logo图片URL，建议使用PNG格式',
+    description: '上传网站Logo图片，支持PNG、JPG、GIF格式，建议尺寸200x60像素',
     icon: Image,
-    type: 'url',
-    placeholder: 'https://example.com/logo.png',
+    type: 'file',
+    placeholder: '点击上传Logo图片',
+    accept: 'image/png,image/jpeg,image/jpg,image/gif',
+    maxSize: 2 * 1024 * 1024, // 2MB
     gradient: 'from-pink-500 to-pink-600'
   },
   {
     key: 'site_favicon',
     label: '网站图标',
-    description: '网站的Favicon图标URL，显示在浏览器标签页',
+    description: '上传网站Favicon图标，支持ICO、PNG格式，建议尺寸32x32像素',
     icon: Palette,
-    type: 'url',
-    placeholder: 'https://example.com/favicon.ico',
+    type: 'file',
+    placeholder: '点击上传Favicon图标',
+    accept: 'image/x-icon,image/vnd.microsoft.icon,image/png',
+    maxSize: 1 * 1024 * 1024, // 1MB
     gradient: 'from-orange-500 to-orange-600'
   },
   {
@@ -102,7 +117,7 @@ export const configItems: ConfigItem[] = [
     gradient: 'from-red-500 to-red-600'
   },
   {
-    key: 'icp_number',
+    key: 'site_icp',
     label: 'ICP备案号',
     description: '网站的ICP备案号（中国大陆网站必填）',
     icon: Shield,
@@ -111,7 +126,7 @@ export const configItems: ConfigItem[] = [
     gradient: 'from-teal-500 to-teal-600'
   },
   {
-    key: 'police_number',
+    key: 'site_public_security',
     label: '公安备案号',
     description: '网站的公安备案号（中国大陆网站必填）',
     icon: Building,

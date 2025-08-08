@@ -67,8 +67,45 @@ class SiteConfigResponse(SiteConfigBase):
         from_attributes = True
 
 
+class SiteConfigBatchUpdateItem(BaseModel):
+    """批量更新单个配置项"""
+    key: str = Field(..., min_length=1, max_length=100, description="配置键名")
+    value: str = Field(..., description="配置值")
+
+    @validator('key')
+    def validate_key(cls, v):
+        if not v or not v.strip():
+            raise ValueError('配置键名不能为空')
+        return v.strip()
+
+    @validator('value')
+    def validate_value(cls, v):
+        # 允许空字符串，但不允许None
+        if v is None:
+            raise ValueError('配置值不能为None')
+        return str(v)
+
+
 class SiteConfigBatchUpdate(BaseModel):
-    configs: List[Dict[str, Any]] = Field(..., description="批量更新的配置项")
+    """批量更新配置项请求"""
+    configs: List[SiteConfigBatchUpdateItem] = Field(
+        ..., 
+        min_items=1, 
+        max_items=50,
+        description="批量更新的配置项列表"
+    )
+
+    @validator('configs')
+    def validate_configs(cls, v):
+        if not v:
+            raise ValueError('配置项列表不能为空')
+        
+        # 检查重复的键名
+        keys = [config.key for config in v]
+        if len(keys) != len(set(keys)):
+            raise ValueError('配置项中存在重复的键名')
+        
+        return v
 
 
 class SiteConfigPublic(BaseModel):

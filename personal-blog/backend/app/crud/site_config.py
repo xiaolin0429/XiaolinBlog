@@ -70,36 +70,130 @@ class CRUDSiteConfig:
         return db_obj
 
     def update_by_key(
-        self, db: Session, *, key: str, value: str
+        self, db: Session, *, key: str, value: str = None, obj_in: SiteConfigUpdate = None
     ) -> Optional[SiteConfig]:
         """根据键名更新配置项的值"""
         db_obj = self.get_by_key(db, key=key)
         if db_obj:
-            db_obj.value = value
+            if obj_in:
+                # 如果提供了 obj_in，使用它来更新
+                update_data = obj_in.dict(exclude_unset=True)
+                for field, field_value in update_data.items():
+                    if field == 'value' or hasattr(db_obj, field):
+                        setattr(db_obj, field, field_value)
+            elif value is not None:
+                # 如果只提供了 value，直接更新值
+                db_obj.value = value
+            
             db.add(db_obj)
             db.commit()
             db.refresh(db_obj)
         return db_obj
 
     def batch_update(
-        self, db: Session, *, configs: List[Dict[str, Any]]
+        self, db: Session, *, configs: List[Any]
     ) -> List[SiteConfig]:
         """批量更新配置项"""
-        updated_configs = []
-        for config_data in configs:
-            key = config_data.get('key')
-            value = config_data.get('value')
-            if key and value is not None:
-                db_obj = self.get_by_key(db, key=key)
-                if db_obj:
-                    db_obj.value = value
-                    db.add(db_obj)
-                    updated_configs.append(db_obj)
+        if not configs:
+            raise ValueError("配置项列表不能为空")
         
-        db.commit()
-        for config in updated_configs:
-            db.refresh(config)
-        return updated_configs
+        updated_configs = []
+        errors = []
+        
+        try:
+            for i, config_item in enumerate(configs):
+                # 支持字典格式（向后兼容）和Pydantic模型格式
+                if hasattr(config_item, 'key') and hasattr(config_item, 'value'):
+                    # Pydantic模型格式
+                    key = config_item.key
+                    value = config_item.value
+                elif isinstance(config_item, dict):
+                    # 字典格式（向后兼容）
+                    key = config_item.get('key')
+                    value = config_item.get('value')
+                else:
+                    errors.append(f"配置项 {i+1}: 数据格式不正确")
+                    continue
+                
+                # 验证必需字段
+                if not key:
+                    errors.append(f"配置项 {i+1}: 缺少 key 字段")
+                    continue
+                
+                if value is None:
+                    errors.append(f"配置项 {i+1}: 缺少 value 字段")
+                    continue
+                
+                # 查找数据库中的配置项
+                db_obj = self.get_by_key(db, key=key)
+                if not db_obj:
+                    errors.append(f"配置项 {i+1}: 键名 '{key}' 不存在")
+                    continue
+                
+                # 验证数据类型（如果有定义）
+                if hasattr(db_obj, 'data_type') and db_obj.data_type:
+                    validation_error = self._validate_config_value(value, db_obj.data_type)
+                    if validation_error:
+                        errors.append(f"配置项 {i+1} (key: {key}): {validation_error}")
+                        continue
+                
+                # 更新配置项
+                old_value = db_obj.value
+                db_obj.value = str(value) if value is not None else ""
+                db.add(db_obj)
+                updated_configs.append(db_obj)
+                
+                # 记录更新日志
+                print(f"更新配置项: {key} = '{old_value}' -> '{db_obj.value}'")
+            
+            # 如果有错误，抛出异常
+            if errors:
+                raise ValueError("批量更新失败:\n" + "\n".join(errors))
+            
+            # 提交事务
+            db.commit()
+            
+            # 刷新所有更新的对象
+            for config in updated_configs:
+                db.refresh(config)
+            
+            return updated_configs
+            
+        except Exception as e:
+            # 回滚事务
+            db.rollback()
+            raise e
+    
+    def _validate_config_value(self, value: Any, data_type: str) -> str:
+        """验证配置值的数据类型"""
+        if value is None or value == "":
+            return ""  # 空值通常是允许的
+        
+        value_str = str(value)
+        
+        try:
+            if data_type == "number":
+                float(value_str)
+            elif data_type == "boolean":
+                if value_str.lower() not in ['true', 'false', '1', '0']:
+                    return "布尔值格式不正确，应为 true/false 或 1/0"
+            elif data_type == "email":
+                import re
+                email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                if not re.match(email_pattern, value_str):
+                    return "邮箱格式不正确"
+            elif data_type == "url":
+                import re
+                url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+                if value_str and not re.match(url_pattern, value_str):
+                    return "URL格式不正确"
+            elif data_type == "json":
+                import json
+                json.loads(value_str)
+        except (ValueError, TypeError) as e:
+            return f"数据类型验证失败: {str(e)}"
+        
+        return ""
 
     def delete(self, db: Session, *, config_id: int) -> SiteConfig:
         """删除配置项"""

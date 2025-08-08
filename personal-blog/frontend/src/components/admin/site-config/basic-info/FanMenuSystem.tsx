@@ -45,6 +45,13 @@ const menuItems: MenuItem[] = [
     gradient: 'from-green-500 to-green-600'
   },
   {
+    id: 'site_keywords',
+    label: '网站关键词',
+    icon: FileText,
+    color: 'text-emerald-600',
+    gradient: 'from-emerald-500 to-emerald-600'
+  },
+  {
     id: 'site_logo',
     label: '网站Logo',
     icon: Image,
@@ -80,14 +87,14 @@ const menuItems: MenuItem[] = [
     gradient: 'from-red-500 to-red-600'
   },
   {
-    id: 'icp_number',
+    id: 'site_icp',
     label: 'ICP备案号',
     icon: Shield,
     color: 'text-teal-600',
     gradient: 'from-teal-500 to-teal-600'
   },
   {
-    id: 'police_number',
+    id: 'site_public_security',
     label: '公安备案号',
     icon: Building,
     color: 'text-amber-600',

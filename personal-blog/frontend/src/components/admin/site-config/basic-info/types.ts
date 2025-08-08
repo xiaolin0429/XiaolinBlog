@@ -4,25 +4,25 @@
 
 export interface BasicInfoConfig {
   /** 网站标题 */
-  title: string;
+  site_title: string;
   /** 网站副标题/标语 */
-  subtitle: string;
+  site_subtitle: string;
   /** 网站描述 */
-  description: string;
+  site_description: string;
   /** 网站Logo URL */
-  logo: string;
+  site_logo: string;
   /** 网站图标 URL */
-  favicon: string;
+  site_favicon: string;
   /** 网站语言 */
-  language: string;
+  site_language: string;
   /** 时区 */
-  timezone: string;
+  site_timezone: string;
   /** 版权信息 */
-  copyright: string;
+  site_copyright: string;
   /** ICP备案号 */
-  icp: string;
+  site_icp: string;
   /** 公安备案号 */
-  publicSecurity: string;
+  site_public_security: string;
 }
 
 export interface BasicInfoFormData extends BasicInfoConfig {}

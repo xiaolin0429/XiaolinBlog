@@ -19,9 +19,20 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* 网站信息 */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">
-              {loading ? '个人博客' : (siteInfo.title || '个人博客')}
-            </h3>
+            {/* 网站Logo */}
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/api/v1/image/site-logo" 
+                alt="网站Logo" 
+                className="h-8 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <h3 className="font-semibold text-lg">
+                {loading ? '个人博客' : (siteInfo.title || '个人博客')}
+              </h3>
+            </div>
             <p className="text-muted-foreground text-sm">
               {loading ? '分享技术与生活' : (siteInfo.subtitle || '分享技术与生活')}
             </p>
@@ -71,13 +82,41 @@ export function Footer() {
                 </div>
               )}
               <div className="space-y-1">
-                <p>© {currentYear} {siteInfo.title || '个人博客'}. {otherSettings.copyright || '保留所有权利。'}</p>
+                <p>
+                  {otherSettings.copyright 
+                    ? otherSettings.copyright 
+                    : `© ${currentYear} ${siteInfo.title || '个人博客'}. 保留所有权利。`
+                  }
+                </p>
                 {otherSettings.icp && (
-                  <p>
+                  <div className="flex items-center space-x-2">
+                    <img 
+                      src="/images/icp_logo.png" 
+                      alt="ICP备案" 
+                      className="w-4 h-4 flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                     <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                       {otherSettings.icp}
                     </a>
-                  </p>
+                  </div>
+                )}
+                {otherSettings.publicSecurity && (
+                  <div className="flex items-center space-x-2">
+                    <img 
+                      src="/images/beian_logo.png" 
+                      alt="公安备案" 
+                      className="w-4 h-4 flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <a href="http://www.beian.gov.cn/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                      {otherSettings.publicSecurity}
+                    </a>
+                  </div>
                 )}
               </div>
             </div>
