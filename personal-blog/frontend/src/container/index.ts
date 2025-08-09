@@ -10,6 +10,9 @@ import { SERVICE_TOKENS, ServiceMap } from './types'
 // 全局容器实例
 let globalContainer: DIContainer | null = null
 
+// 容器初始化事件
+const containerInitListeners = new Set<() => void>()
+
 /**
  * 获取全局容器实例
  */
@@ -48,6 +51,9 @@ export async function initializeContainer(): Promise<DIContainer> {
     if (process.env.NODE_ENV === 'development') {
       console.log('📦 Container debug info:', globalContainer.getDebugInfo())
     }
+    
+    // 通知所有等待的Hook容器已初始化
+    containerInitListeners.forEach(listener => listener())
     
     return globalContainer
   } catch (error) {
@@ -118,6 +124,7 @@ export async function reinitializeContainer(): Promise<DIContainer> {
 
 // React hooks for DI
 import { useEffect, useState } from 'react'
+import { getContainer as getBootstrapContainer } from '../bootstrap'
 
 /**
  * 使用依赖注入的React Hook
@@ -134,37 +141,51 @@ export function useService<K extends keyof ServiceMap>(
 
     const loadService = async () => {
       try {
-        const container = getContainer()
+        // 使用 bootstrap 容器系统
+        const container = getBootstrapContainer()
         const serviceInstance = await container.resolve(token)
         
         if (mounted) {
           setService(serviceInstance)
           setError(null)
+          setLoading(false)
         }
       } catch (err) {
         if (mounted) {
-          setError(err as Error)
-          setService(null)
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false)
+          // 容器可能还未初始化，保持loading状态
+          if (err instanceof Error && err.message.includes('容器尚未初始化')) {
+            setService(null)
+            setError(null)
+            setLoading(true)
+          } else {
+            setError(err as Error)
+            setService(null)
+            setLoading(false)
+          }
         }
       }
     }
 
     loadService()
 
+    // 设置定时器重试（如果容器未初始化）
+    const retryTimer = setTimeout(() => {
+      if (mounted && !service && !error) {
+        loadService()
+      }
+    }, 100)
+
     return () => {
       mounted = false
+      clearTimeout(retryTimer)
     }
-  }, [token])
+  }, [token, service, error]) // 添加依赖来触发重试
 
   if (error) {
     throw error
   }
 
-  return loading ? null : service
+  return service
 }
 
 /**
@@ -174,7 +195,7 @@ export function useServiceSync<K extends keyof ServiceMap>(
   token: K
 ): ServiceMap[K] {
   try {
-    const container = getContainer()
+    const container = getBootstrapContainer()
     return container.resolveSync(token)
   } catch (error) {
     console.error(`Failed to resolve service ${token.toString()}:`, error)

@@ -20,6 +20,7 @@ export const SERVICE_TOKENS = {
   // 用例
   LOGIN_USE_CASE: Symbol('LoginUseCase'),
   CONFIG_MANAGEMENT_USE_CASE: Symbol('ConfigManagementUseCase'),
+  SITE_CONFIG_USE_CASE: Symbol('SiteConfigUseCase'),
   
   // 配置
   API_CONFIG: Symbol('ApiConfig'),
@@ -39,6 +40,7 @@ export interface ServiceMap {
   [SERVICE_TOKENS.AUTH_SERVICE]: import('../infrastructure/services/AuthService').AuthService
   [SERVICE_TOKENS.LOGIN_USE_CASE]: import('../application/usecases/LoginUseCase').LoginUseCase
   [SERVICE_TOKENS.CONFIG_MANAGEMENT_USE_CASE]: import('../application/usecases/ConfigManagementUseCase').ConfigManagementUseCase
+  [SERVICE_TOKENS.SITE_CONFIG_USE_CASE]: import('../application/usecases/SiteConfigUseCase').SiteConfigUseCase
   [SERVICE_TOKENS.API_CONFIG]: ApiConfig
   [SERVICE_TOKENS.APP_CONFIG]: AppConfig
 }

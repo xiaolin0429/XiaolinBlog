@@ -34,8 +34,9 @@ export class ConfigApi {
   private readonly endpoints = {
     public: '/site-config/public',
     private: '/site-config',
-    batch: '/site-config/batch',
-    single: (key: string) => `/site-config/${key}`
+    batch: '/site-config/batch-update',
+    single: (key: string) => `/site-config/${key}`,
+    validate: '/site-config/validate'
   }
 
   constructor(httpClient: IHttpClient) {
@@ -128,15 +129,10 @@ export class ConfigApi {
   /**
    * 批量更新配置
    */
-  async batchUpdateConfig(configs: BatchConfigUpdate): Promise<ApiResponse<{
-    updated: number
-    failed: Array<{ key: string; error: string }>
-  }>> {
+  async batchUpdateConfig(configs: Array<{ key: string; value: string }>): Promise<ConfigResponse[]> {
     try {
-      return await this.httpClient.post<{
-        updated: number
-        failed: Array<{ key: string; error: string }>
-      }>(this.endpoints.batch, configs)
+      const response = await this.httpClient.post<ConfigResponse[]>(this.endpoints.batch, { configs })
+      return response.data
     } catch (error) {
       if (error instanceof ApplicationError) {
         throw error
@@ -144,7 +140,34 @@ export class ConfigApi {
       throw new ApplicationError(
         ErrorCode.CONFIG_ERROR,
         '批量更新配置失败',
-        { originalError: error, configCount: configs.configs.length }
+        { originalError: error, configCount: configs.length }
+      )
+    }
+  }
+
+  /**
+   * 验证配置项
+   */
+  async validateConfigs(configs: Array<{ key: string; value: string; data_type?: string }>): Promise<{
+    valid: boolean
+    errors: Record<string, string[]>
+    warnings: Record<string, string[]>
+  }> {
+    try {
+      const response = await this.httpClient.post<{
+        valid: boolean
+        errors: Record<string, string[]>
+        warnings: Record<string, string[]>
+      }>(this.endpoints.validate, { configs })
+      return response.data
+    } catch (error) {
+      if (error instanceof ApplicationError) {
+        throw error
+      }
+      throw new ApplicationError(
+        ErrorCode.CONFIG_ERROR,
+        '验证配置失败',
+        { originalError: error }
       )
     }
   }

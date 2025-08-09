@@ -107,6 +107,20 @@ export class ApplicationError extends Error {
   }
 
   /**
+   * 从普通错误创建ApplicationError
+   */
+  static fromError(error: any, code: ErrorCode = ErrorCode.UNKNOWN, context: ErrorContext = {}): ApplicationError {
+    if (error instanceof ApplicationError) {
+      return error
+    }
+    
+    const message = error instanceof Error ? error.message : String(error)
+    const cause = error instanceof Error ? error : undefined
+    
+    return new ApplicationError(code, message, context, cause)
+  }
+
+  /**
    * 检查是否为指定错误类型
    */
   is(code: ErrorCode): boolean {

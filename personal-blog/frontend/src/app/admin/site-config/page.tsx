@@ -7,7 +7,7 @@
 
 import React from 'react'
 import { AuthGuard } from '@/components/AuthGuard'
-import { ConfigForm } from '../../../presentation/components/config/ConfigForm'
+import { ConfigFormRefactored } from '../../../components/admin/site-config/ConfigFormRefactored'
 
 export default function SiteConfigPage() {
   return (
@@ -22,7 +22,7 @@ export default function SiteConfigPage() {
         </div>
 
         {/* 配置表单 */}
-        <ConfigForm />
+        <ConfigFormRefactored />
       </div>
     </AuthGuard>
   )
