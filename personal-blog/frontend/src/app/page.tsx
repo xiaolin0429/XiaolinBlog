@@ -1,7 +1,14 @@
-import { Suspense } from "react";
-import { HeroSection } from "@/components/home/hero-section";
-import { LatestPosts } from "@/components/home/latest-posts";
-import { CategoriesTags } from "@/components/home/categories-tags";
+/**
+ * 首页 - 使用新架构
+ * 迁移到新架构的首页
+ */
+
+import React, { Suspense } from "react";
+import { AppProvider } from "../AppProvider";
+import { PublicLayout } from "../presentation/layouts/PublicLayout";
+import { HeroSection } from "../components/home/hero-section";
+import { LatestPosts } from "../components/home/latest-posts";
+import { CategoriesTags } from "../components/home/categories-tags";
 
 function LoadingSkeleton() {
   return (
@@ -16,7 +23,7 @@ function LoadingSkeleton() {
   );
 }
 
-export default function HomePage() {
+function HomePageContent() {
   return (
     <main className="min-h-screen">
       {/* Hero 部分 */}
@@ -34,5 +41,15 @@ export default function HomePage() {
         <CategoriesTags />
       </Suspense>
     </main>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <AppProvider>
+      <PublicLayout>
+        <HomePageContent />
+      </PublicLayout>
+    </AppProvider>
   );
 }

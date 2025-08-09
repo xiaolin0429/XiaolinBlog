@@ -3,13 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { authApi } from '@/lib/api/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AppProvider } from '../../AppProvider';
+import { useAuth } from '../../application/hooks/useAuth';
+import { 
+  Button, 
+  Input, 
+  Label, 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle,
+  Alert,
+  AlertDescription
+} from '../../presentation/components/ui';
 import { Eye, EyeOff, UserPlus, ArrowLeft, User, Mail, Lock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,7 +35,7 @@ interface FormErrors {
   confirmPassword?: string;
 }
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const [formData, setFormData] = useState<RegisterFormData>({
     username: '',
     email: '',
@@ -42,7 +49,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
 
   // 表单验证函数
   const validateForm = (): boolean => {
@@ -113,30 +120,23 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.register({
+      const result = await register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
         full_name: formData.full_name || undefined
       });
 
-      if (response.data) {
+      if (result.success && result.user) {
         // 注册成功，显示成功消息
-        toast.success('注册成功！正在为您登录...');
+        toast.success('注册成功！正在跳转到首页...');
         
-        // 注册成功后自动登录（后端已返回token和用户信息）
-        if (response.data.access_token && response.data.user) {
-          // 保存token到localStorage
-          localStorage.setItem('access_token', response.data.access_token);
-          
-          // 调用登录函数来设置用户状态
-          const loginSuccess = await login(formData.username, formData.password);
-          if (loginSuccess) {
-            router.push('/');
-          }
-        }
+        // 注册成功后自动登录并跳转到首页
+        setTimeout(() => {
+          router.push('/');
+        }, 1000);
       } else {
-        throw new Error(response.error || '注册失败');
+        throw new Error(result.error || '注册失败');
       }
     } catch (err: any) {
       const errorMessage = err.message || '注册失败，请稍后重试';
@@ -398,5 +398,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <AppProvider>
+      <RegisterPageContent />
+    </AppProvider>
   );
 }

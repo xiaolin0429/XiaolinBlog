@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../presentation/components/ui';
 import { FileText, Eye, MessageSquare, TrendingUp } from 'lucide-react';
 
 interface DashboardStatsProps {

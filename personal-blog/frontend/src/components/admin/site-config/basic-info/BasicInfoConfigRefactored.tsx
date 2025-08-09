@@ -131,16 +131,16 @@ export function BasicInfoConfigRefactored({ configs, onUpdate }: BasicInfoConfig
       {/* 配置预览 */}
       <BasicInfoPreview
         config={{
-          title: getConfigValue('title'),
-          subtitle: getConfigValue('subtitle'),
-          description: getConfigValue('description'),
-          logo: getConfigValue('logo'),
-          favicon: getConfigValue('favicon'),
-          language: getConfigValue('language'),
-          timezone: getConfigValue('timezone'),
-          copyright: getConfigValue('copyright'),
-          icp: getConfigValue('icp'),
-          publicSecurity: getConfigValue('publicSecurity')
+          site_title: getConfigValue('site_title'),
+          site_subtitle: getConfigValue('site_subtitle'),
+          site_description: getConfigValue('site_description'),
+          site_logo: getConfigValue('site_logo'),
+          site_favicon: getConfigValue('site_favicon'),
+          site_language: getConfigValue('site_language'),
+          site_timezone: getConfigValue('site_timezone'),
+          site_copyright: getConfigValue('site_copyright'),
+          site_icp: getConfigValue('site_icp'),
+          site_public_security: getConfigValue('site_public_security')
         }}
       />
 

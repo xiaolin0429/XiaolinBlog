@@ -1,58 +1,81 @@
+/**
+ * 登录页面 - 使用新架构
+ * 迁移到新架构的登录页面
+ */
+
 "use client"
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { AppProvider } from '../../AppProvider'
+import { useAuth } from '../../application/hooks/useAuth'
+import { 
+  Button, 
+  Input, 
+  Label, 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle, 
+  Alert, 
+  AlertDescription,
+  LoadingSpinner 
+} from '../../presentation/components/ui'
+import { Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react'
+import { toast } from 'sonner'
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
-  const { login } = useAuth();
+  })
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    e.preventDefault()
+    setLoading(true)
+    setError('')
 
     try {
-      const success = await login(formData.username, formData.password);
+      const result = await login(formData.username, formData.password)
       
-      if (success) {
-        // 获取重定向参数，如果没有则跳转到首页
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectTo = urlParams.get('redirect') || '/';
-        router.push(redirectTo);
+      if (result.success) {
+        // 获取重定向参数，如果没有则跳转到管理后台
+        const urlParams = new URLSearchParams(window.location.search)
+        const redirectTo = urlParams.get('redirect') || '/admin'
+        
+        // 添加调试日志
+        console.log('Login successful, redirecting to:', redirectTo)
+        
+        // 使用 replace 而不是 push 来避免用户返回到登录页
+        router.replace(redirectTo)
+      } else {
+        setError(result.error || '登录失败')
+        console.log('Login failed:', result.error)
       }
     } catch (err: any) {
-      const errorMessage = err.message || '登录失败，请稍后重试';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const errorMessage = err.message || '登录失败，请稍后重试'
+      setError(errorMessage)
+      toast.error(errorMessage)
+      console.error('Login error:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }));
-  };
+    }))
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -145,7 +168,7 @@ export default function LoginPage() {
               >
                 {loading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                     登录中...
                   </>
                 ) : (
@@ -182,5 +205,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  );
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <AppProvider>
+      <LoginPageContent />
+    </AppProvider>
+  )
 }

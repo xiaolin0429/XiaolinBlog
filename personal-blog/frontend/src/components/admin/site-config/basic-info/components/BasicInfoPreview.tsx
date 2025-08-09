@@ -19,63 +19,63 @@ export function BasicInfoPreview({ config, visible = true }: BasicInfoPreviewPro
     {
       icon: Type,
       label: '网站标题',
-      value: config.title,
+      value: config.site_title,
       required: true
     },
     {
       icon: FileText,
       label: '网站副标题',
-      value: config.subtitle,
+      value: config.site_subtitle,
       required: false
     },
     {
       icon: FileText,
       label: '网站描述',
-      value: config.description,
+      value: config.site_description,
       required: true
     },
     {
       icon: Image,
       label: '网站Logo',
-      value: config.logo,
+      value: config.site_logo,
       required: false,
       isUrl: true
     },
     {
       icon: Star,
       label: '网站图标',
-      value: config.favicon,
+      value: config.site_favicon,
       required: false,
       isUrl: true
     },
     {
       icon: Languages,
       label: '网站语言',
-      value: getConfigDisplayValue(config, 'language'),
+      value: getConfigDisplayValue(config, 'site_language'),
       required: true
     },
     {
       icon: Clock,
       label: '时区设置',
-      value: getConfigDisplayValue(config, 'timezone'),
+      value: getConfigDisplayValue(config, 'site_timezone'),
       required: true
     },
     {
       icon: Copyright,
       label: '版权信息',
-      value: config.copyright,
+      value: config.site_copyright,
       required: false
     },
     {
       icon: Shield,
       label: 'ICP备案号',
-      value: config.icp,
+      value: config.site_icp,
       required: false
     },
     {
       icon: ShieldCheck,
       label: '公安备案号',
-      value: config.publicSecurity,
+      value: config.site_public_security,
       required: false
     }
   ];

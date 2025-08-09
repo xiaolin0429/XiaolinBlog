@@ -223,3 +223,20 @@ export interface PostFilters {
   tag_id?: number;
   search?: string;
 }
+
+// Dashboard相关类型
+export interface DashboardStats {
+  totalPosts: number;
+  publishedPosts: number;
+  draftPosts: number;
+  totalViews: number;
+  totalComments: number;
+  approvedComments: number;
+  featuredPosts: number;
+}
+
+export interface DashboardData {
+  stats: DashboardStats;
+  recentPosts: Post[];
+  recentComments: Comment[];
+}

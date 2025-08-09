@@ -1,28 +1,38 @@
+/**
+ * 文章管理页面 - 移除新UI菜单重叠
+ * 使用原始admin layout，移除新架构布局组件
+ */
+
 "use client"
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthGuard } from '@/components/AuthGuard';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
+import {
+  Button,
+  Input,
+  Badge,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuSeparator,
+  Skeleton
+} from '../../../presentation/components/ui';
 import { 
   Plus, 
   Search, 
@@ -37,10 +47,9 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { postsAPI, type PostList } from '@/lib/api/posts';
-import { Skeleton } from '@/components/ui/skeleton';
+import { postsAPI, type PostList } from '../../../lib/api/posts';
 
-function PostsManagePageContent() {
+export default function PostsManagePage() {
   const router = useRouter();
   const [posts, setPosts] = useState<PostList[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<PostList[]>([]);
@@ -193,7 +202,7 @@ function PostsManagePageContent() {
 
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex items-center gap-4">
               <Skeleton className="h-10 flex-1" />
               <Skeleton className="h-10 w-32" />
               <Skeleton className="h-10 w-32" />
@@ -338,7 +347,11 @@ function PostsManagePageContent() {
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="状态" />
+                  <SelectValue placeholder="状态" value={statusFilter === 'all' ? '' : 
+                    statusFilter === 'published' ? '已发布' :
+                    statusFilter === 'draft' ? '草稿' :
+                    statusFilter === 'archived' ? '已归档' : statusFilter
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部状态</SelectItem>
@@ -350,7 +363,10 @@ function PostsManagePageContent() {
               
               <Select value={featuredFilter} onValueChange={setFeaturedFilter}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="精选" />
+                  <SelectValue placeholder="精选" value={featuredFilter === 'all' ? '' :
+                    featuredFilter === 'featured' ? '精选' :
+                    featuredFilter === 'normal' ? '普通' : featuredFilter
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部</SelectItem>
@@ -511,13 +527,5 @@ function PostsManagePageContent() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-export default function PostsManagePage() {
-  return (
-    <AuthGuard>
-      <PostsManagePageContent />
-    </AuthGuard>
   );
 }

@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button, Card, CardContent, CardHeader, CardTitle, Textarea, Input, Label, Avatar, AvatarFallback } from '../../presentation/components/ui';
 import { MessageCircle, Send, Reply, Heart, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { commentsApi, Comment } from '@/lib/api/comments';
-import { useAuth } from '@/contexts/AuthContext';
+import { commentsApi, Comment } from '../../lib/api/comments';
+import { useAuth } from '../../application/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface CommentSectionProps {

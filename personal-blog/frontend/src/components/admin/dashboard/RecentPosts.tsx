@@ -1,9 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button } from '../../../presentation/components/ui';
 import { FileText, Calendar, Eye, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
-import { PostList } from '@/lib/api/posts';
+
+// 定义本地接口类型，避免依赖外部API类型
+interface PostList {
+  id: number;
+  title: string;
+  status: string;
+  created_at: string;
+  view_count: number;
+  comment_count: number;
+}
 
 interface RecentPostsProps {
   posts: PostList[];

@@ -403,15 +403,15 @@ function UsersPageContent() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <td colSpan={7} className="text-center py-8 p-2 align-middle">
                       加载中...
-                    </TableCell>
+                    </td>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <td colSpan={7} className="text-center py-8 p-2 align-middle">
                       {searchQuery ? '没有找到匹配的用户' : '暂无用户数据'}
-                    </TableCell>
+                    </td>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (

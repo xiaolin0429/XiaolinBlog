@@ -1,11 +1,15 @@
+/**
+ * 认证守卫组件 - 使用新架构
+ * 迁移到新架构的认证守卫组件
+ */
+
 "use client";
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../application/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2, Lock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '../presentation/components/ui';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -13,7 +17,7 @@ interface AuthGuardProps {
   redirectTo?: string;
 }
 
-export function AuthGuard({ 
+export function AuthGuard({
   children, 
   requireAdmin = false, 
   redirectTo = '/login' 

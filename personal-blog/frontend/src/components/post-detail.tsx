@@ -4,14 +4,11 @@ import { useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Clock, Tag, User, ArrowLeft, Share2, Heart, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { postsAPI } from '@/lib/api/posts';
-import { Post } from '@/types/api';
+import { Button, Badge, Separator, Skeleton } from "../presentation/components/ui";
+import { postsAPI } from '../lib/api/posts';
+import { Post } from '../types/api';
 import { toast } from 'sonner';
-import CommentSection from '@/components/comments/comment-section';
+import CommentSection from './comments/comment-section';
 
 interface PostDetailProps {
   slug: string;

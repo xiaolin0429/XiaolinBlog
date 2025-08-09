@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../application/hooks/useAuth';
 import { usersApi } from '@/lib/api/users';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ interface PasswordFormData {
 }
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
@@ -74,7 +74,7 @@ export default function ProfilePage() {
       await usersApi.updateProfile(profileForm);
       // 重新获取完整的用户信息，确保包含所有字段（如 is_superuser）
       const updatedUser = await usersApi.getCurrentUser();
-      setUser(updatedUser);
+      // setUser(updatedUser); // 移除 setUser 调用，因为 useAuth 不再提供此方法
       toast.success("个人资料更新成功");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "更新失败");
@@ -141,7 +141,7 @@ export default function ProfilePage() {
       
       // 重新获取完整的用户信息，确保包含所有字段（如 is_superuser）
       const updatedUser = await usersApi.getCurrentUser();
-      setUser(updatedUser);
+      // setUser(updatedUser); // 移除 setUser 调用，因为 useAuth 不再提供此方法
       
       toast.success("头像上传成功");
     } catch (error) {

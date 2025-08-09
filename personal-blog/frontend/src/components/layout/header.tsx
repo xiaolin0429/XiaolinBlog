@@ -4,18 +4,20 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, Search, User, Moon, Sun, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../../application/hooks/useAuth";
 import { useSiteConfig } from "@/hooks/use-site-config";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
+  Button,
+  Input,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+  Avatar,
+  AvatarFallback,
+  AvatarImage
+} from "../../presentation/components/ui";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

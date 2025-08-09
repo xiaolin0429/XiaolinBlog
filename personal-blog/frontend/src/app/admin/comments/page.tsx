@@ -2,13 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { AuthGuard } from '@/components/AuthGuard';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Button,
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle,
+  Badge,
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../../../presentation/components/ui';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageCircle, MoreHorizontal, Search, Filter, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -98,32 +113,34 @@ export default function CommentsPage() {
 
   const filteredComments = comments.filter(comment => {
     const matchesSearch = comment.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comment.author_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comment.post_title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || comment.status === statusFilter;
+                         (comment.author_name && comment.author_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         ((comment as any).post_title && (comment as any).post_title.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === 'all' || (comment as any).status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const stats = {
     total: comments.length,
-    approved: comments.filter(c => c.status === 'approved').length,
-    pending: comments.filter(c => c.status === 'pending').length,
-    spam: comments.filter(c => c.status === 'spam').length
+    approved: comments.filter(c => (c as any).status === 'approved').length,
+    pending: comments.filter(c => (c as any).status === 'pending').length,
+    spam: comments.filter(c => (c as any).status === 'spam').length
   };
 
-  const CommentsPageContent = () => {
-    if (loading) {
-      return (
+  if (loading) {
+    return (
+      <AuthGuard requireAdmin>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-gray-600">加载中...</p>
           </div>
         </div>
-      );
-    }
+      </AuthGuard>
+    );
+  }
 
-    return (
+  return (
+    <AuthGuard requireAdmin>
       <div className="space-y-6">
         {/* 页面标题 */}
         <div>
@@ -230,12 +247,12 @@ export default function CommentsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="max-w-xs">
-                        <div className="truncate" title={comment.post_title}>
-                          {comment.post_title}
+                        <div className="truncate" title={(comment as any).post_title}>
+                          {(comment as any).post_title}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(comment.status)}
+                        {getStatusBadge((comment as any).status)}
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -250,7 +267,7 @@ export default function CommentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {comment.status !== 'approved' && (
+                            {(comment as any).status !== 'approved' && (
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(comment.id, 'approved')}
                                 className="text-green-600"
@@ -259,7 +276,7 @@ export default function CommentsPage() {
                                 审核通过
                               </DropdownMenuItem>
                             )}
-                            {comment.status !== 'spam' && (
+                            {(comment as any).status !== 'spam' && (
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(comment.id, 'spam')}
                                 className="text-red-600"
@@ -296,12 +313,6 @@ export default function CommentsPage() {
           </CardContent>
         </Card>
       </div>
-    );
-  };
-
-  return (
-    <AuthGuard requireAdmin>
-      <CommentsPageContent />
     </AuthGuard>
   );
 }

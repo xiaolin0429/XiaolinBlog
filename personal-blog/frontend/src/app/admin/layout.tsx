@@ -1,12 +1,21 @@
+/**
+ * 管理后台布局 - 使用新架构
+ * 迁移到新架构的管理后台布局
+ */
+
 "use client"
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '../../application/hooks/useAuth';
+import { 
+  Button, 
+  Badge, 
+  Avatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from '../../presentation/components/ui';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -22,7 +31,7 @@ import {
   Cog,
   Activity
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../presentation/lib/utils';
 
 interface AdminLayoutProps {
   children: React.ReactNode;

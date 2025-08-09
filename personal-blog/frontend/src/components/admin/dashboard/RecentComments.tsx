@@ -1,10 +1,22 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge, Button, Avatar, AvatarFallback, AvatarImage } from '../../../presentation/components/ui';
 import { MessageSquare, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { Comment } from '@/types/api';
+
+// 定义本地接口类型，避免依赖外部API类型
+interface Comment {
+  id: number;
+  content: string;
+  author_name?: string;
+  post_id: number;
+  is_approved: boolean;
+  is_spam: boolean;
+  created_at: string;
+  author?: {
+    full_name?: string;
+    username: string;
+    avatar?: string | null;
+  };
+}
 
 interface RecentCommentsProps {
   comments: Comment[];

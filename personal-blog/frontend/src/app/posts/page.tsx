@@ -57,14 +57,17 @@ export default function PostsPage() {
     let filtered = [...posts];
 
     // 关键词搜索
-    if (filters.query.trim()) {
+    if (filters.query?.trim()) {
       const query = filters.query.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.title.toLowerCase().includes(query) ||
-        (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
-        post.content.toLowerCase().includes(query) ||
-        (post.tags?.some(tag => tag.name.toLowerCase().includes(query)))
-      );
+      filtered = filtered.filter(post => {
+        // 安全检查所有可能为undefined的字段
+        const titleMatch = post.title?.toLowerCase().includes(query) || false;
+        const excerptMatch = post.excerpt?.toLowerCase().includes(query) || false;
+        const contentMatch = post.content?.toLowerCase().includes(query) || false;
+        const tagMatch = post.tags?.some(tag => tag.name?.toLowerCase().includes(query)) || false;
+        
+        return titleMatch || excerptMatch || contentMatch || tagMatch;
+      });
     }
 
     // 分类筛选
@@ -73,9 +76,9 @@ export default function PostsPage() {
     }
 
     // 标签筛选
-    if (filters.tags.length > 0) {
+    if (filters.tags && filters.tags.length > 0) {
       filtered = filtered.filter(post =>
-        post.tags?.some(tag => filters.tags.includes(tag.slug))
+        post.tags?.some(tag => tag.slug && filters.tags.includes(tag.slug))
       );
     }
 
@@ -97,7 +100,7 @@ export default function PostsPage() {
       }
       
       filtered = filtered.filter(post => 
-        new Date(post.created_at) >= filterDate
+        post.created_at && new Date(post.created_at) >= filterDate
       );
     }
 
@@ -107,16 +110,16 @@ export default function PostsPage() {
       
       switch (filters.sortBy) {
         case 'title':
-          aValue = a.title;
-          bValue = b.title;
+          aValue = a.title || '';
+          bValue = b.title || '';
           break;
         case 'updated_at':
-          aValue = new Date(a.updated_at);
-          bValue = new Date(b.updated_at);
+          aValue = a.updated_at ? new Date(a.updated_at) : new Date(0);
+          bValue = b.updated_at ? new Date(b.updated_at) : new Date(0);
           break;
         default: // created_at
-          aValue = new Date(a.created_at);
-          bValue = new Date(b.created_at);
+          aValue = a.created_at ? new Date(a.created_at) : new Date(0);
+          bValue = b.created_at ? new Date(b.created_at) : new Date(0);
       }
       
       if (filters.sortOrder === 'asc') {
@@ -130,7 +133,8 @@ export default function PostsPage() {
   };
 
   // 格式化日期
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return '未知日期';
     const date = new Date(dateString);
     return date.toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -151,9 +155,9 @@ export default function PostsPage() {
   // 获取活跃筛选条件的数量
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (currentFilters.query.trim()) count++;
+    if (currentFilters.query?.trim()) count++;
     if (currentFilters.category) count++;
-    if (currentFilters.tags.length > 0) count++;
+    if (currentFilters.tags?.length > 0) count++;
     if (currentFilters.dateRange !== 'all') count++;
     return count;
   };
@@ -290,13 +294,13 @@ export default function PostsPage() {
                 {post.featured_image ? (
                   <img
                     src={post.featured_image}
-                    alt={post.title}
+                    alt={post.title || '文章封面'}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                     <span className="text-4xl font-bold text-primary/30">
-                      {post.title.charAt(0)}
+                      {(post.title || '文章').charAt(0)}
                     </span>
                   </div>
                 )}
@@ -315,27 +319,29 @@ export default function PostsPage() {
 
                 {/* 文章标题 */}
                 <h2 className="text-xl font-semibold text-foreground mb-3 group-hover:text-primary transition-colors line-clamp-2">
-                  <Link href={`/posts/${post.slug}`}>
-                    {post.title}
+                  <Link href={`/posts/${post.slug || post.id}`}>
+                    {post.title || '无标题'}
                   </Link>
                 </h2>
 
                 {/* 文章摘要 */}
                 <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                  {post.excerpt || post.content.substring(0, 150) + '...'}
+                  {post.excerpt || (post.content ? post.content.substring(0, 150) + '...' : '暂无摘要')}
                 </p>
 
                 {/* 标签 */}
                 {post.tags && post.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">
                     {post.tags.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                      >
-                        <Tag className="h-3 w-3" />
-                        {tag.name}
-                      </span>
+                      tag.name ? (
+                        <span
+                          key={tag.id || tag.name}
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+                        >
+                          <Tag className="h-3 w-3" />
+                          {tag.name}
+                        </span>
+                      ) : null
                     ))}
                     {post.tags.length > 3 && (
                       <span className="text-xs text-muted-foreground">
