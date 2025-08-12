@@ -4,7 +4,7 @@
  */
 
 import { IHttpClient, ApiResponse } from '../../core/contracts/IHttpClient'
-import { SiteConfig, SiteConfigItem } from '../../core/entities/SiteConfig'
+import { SiteConfig } from '../../core/entities/SiteConfig'
 import { ApplicationError, ErrorCode } from '../../core/errors/ApplicationError'
 
 export interface BatchConfigUpdate {
@@ -35,7 +35,7 @@ export class ConfigApi {
     public: '/site-config/public',
     private: '/site-config',
     batch: '/site-config/batch-update',
-    single: (key: string) => `/site-config/${key}`,
+    single: (key: string) => `/site-config/key/${key}`,
     validate: '/site-config/validate'
   }
 
@@ -132,7 +132,7 @@ export class ConfigApi {
   async batchUpdateConfig(configs: Array<{ key: string; value: string }>): Promise<ConfigResponse[]> {
     try {
       const response = await this.httpClient.post<ConfigResponse[]>(this.endpoints.batch, { configs })
-      return response.data
+      return response.data || []
     } catch (error) {
       if (error instanceof ApplicationError) {
         throw error
@@ -159,7 +159,7 @@ export class ConfigApi {
         errors: Record<string, string[]>
         warnings: Record<string, string[]>
       }>(this.endpoints.validate, { configs })
-      return response.data
+      return response.data || { valid: false, errors: {}, warnings: {} }
     } catch (error) {
       if (error instanceof ApplicationError) {
         throw error
@@ -312,7 +312,7 @@ export class ConfigApi {
   /**
    * 验证配置数据
    */
-  validateConfigData(data: Partial<SiteConfig>): { valid: boolean; errors: string[] } {
+  validateConfigData(data: Record<string, string>): { valid: boolean; errors: string[] } {
     const errors: string[] = []
 
     if (data.site_title !== undefined) {
@@ -328,7 +328,7 @@ export class ConfigApi {
     }
 
     // 验证URL格式
-    const urlFields: (keyof SiteConfig)[] = [
+    const urlFields = [
       'site_logo', 'site_favicon', 'social_github', 
       'social_twitter', 'social_weibo', 'social_linkedin'
     ]

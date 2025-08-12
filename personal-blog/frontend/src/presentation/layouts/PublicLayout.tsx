@@ -6,8 +6,8 @@
 'use client'
 
 import React, { ReactNode } from 'react'
-import { Header } from '../components/layout/Header'
-import { Footer } from '../components/layout/Footer'
+import { DynamicHeader } from '../../components/layout/DynamicHeader'
+import { DynamicFooter } from '../../components/layout/DynamicFooter'
 
 export interface PublicLayoutProps {
   children: ReactNode
@@ -22,11 +22,11 @@ export function PublicLayout({
 }: PublicLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
-      {showHeader && <Header />}
+      {showHeader && <DynamicHeader />}
       <main className="flex-1">
         {children}
       </main>
-      {showFooter && <Footer />}
+      {showFooter && <DynamicFooter />}
     </div>
   )
 }

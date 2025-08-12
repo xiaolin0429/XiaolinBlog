@@ -76,7 +76,7 @@ const sidebarItems = [
   },
   {
     title: '博客配置',
-    href: '/admin/site-config',
+    href: '/admin/blog-config',
     icon: Cog,
     badge: null
   },

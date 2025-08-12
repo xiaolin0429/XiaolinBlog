@@ -9,6 +9,7 @@ import { PublicLayout } from "../presentation/layouts/PublicLayout";
 import { HeroSection } from "../components/home/hero-section";
 import { LatestPosts } from "../components/home/latest-posts";
 import { CategoriesTags } from "../components/home/categories-tags";
+import { DynamicMetadata } from "../components/layout/DynamicMetadata";
 
 function LoadingSkeleton() {
   return (
@@ -46,10 +47,9 @@ function HomePageContent() {
 
 export default function HomePage() {
   return (
-    <AppProvider>
-      <PublicLayout>
-        <HomePageContent />
-      </PublicLayout>
-    </AppProvider>
+    <PublicLayout>
+      <DynamicMetadata />
+      <HomePageContent />
+    </PublicLayout>
   );
 }

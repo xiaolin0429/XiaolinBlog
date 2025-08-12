@@ -143,7 +143,7 @@ async function saveConfigToAPI(config: SiteConfig): Promise<boolean> {
       data_type: 'string'
     }))
     
-    const response = await fetch('/api/v1/site-config/batch', {
+    const response = await fetch('/api/v1/site-config/batch-update', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Users, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSiteConfig } from "@/hooks/use-site-config";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
 export function HeroSection() {
-  const { getSiteInfo, loading } = useSiteConfig();
-  const siteInfo = getSiteInfo();
+  const { config, loading } = useSiteConfig();
   const stats = [
     {
       icon: BookOpen,
@@ -46,8 +45,8 @@ export function HeroSection() {
           {/* 副标题 */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
             {loading ? 
-              '在这里，我分享编程心得、技术见解和学习历程，与你一起探索代码世界的无限可能' : 
-              (siteInfo.description || '在这里，我分享编程心得、技术见解和学习历程，与你一起探索代码世界的无限可能')
+              '加载中...' : 
+              (config.site_description || '在这里，我分享编程心得、技术见解和学习历程，与你一起探索代码世界的无限可能')
             }
           </p>
           
