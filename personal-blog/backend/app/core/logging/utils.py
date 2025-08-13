@@ -6,7 +6,7 @@ import traceback
 from typing import Optional, Dict, Any
 from datetime import datetime
 
-from app.core.filters import correlation_id_var, user_id_var, request_id_var
+from app.core.logging.filters import correlation_id_var, user_id_var, request_id_var
 
 
 class SecurityLogger:

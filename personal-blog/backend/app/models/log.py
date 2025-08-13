@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
 
-from app.core.database import Base
+from app.core.config.database import Base
 
 
 class LogLevel(str, Enum):

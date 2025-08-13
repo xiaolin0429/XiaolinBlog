@@ -5,10 +5,11 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 
-from app.api.v1.endpoints.deps import get_db, get_current_active_user
+from app.api.v1.endpoints.deps import get_db, get_current_active_user, get_current_user_optional
 from app.schemas.comment import Comment, CommentCreate, CommentUpdate
 from app.schemas.user import User
 from app.services import comment_service, user_service, post_service
+from app.services.user_service import is_superuser
 
 router = APIRouter()
 
@@ -33,14 +34,14 @@ def read_comments(
         authorization = request.headers.get("authorization")
         if authorization:
             try:
-                current_user = user_service.get_current_user_optional(db=db, authorization=authorization)
+                current_user = get_current_user_optional(request, db)
             except:
                 pass
     
     # 如果没有明确指定is_approved参数，根据用户权限决定默认行为
     if is_approved is None:
         # 如果是管理员用户，默认返回所有评论（包括待审核）
-        if current_user and user_service.is_superuser(current_user):
+        if current_user and is_superuser(current_user):
             is_approved = None  # 不过滤，返回所有状态的评论
         else:
             # 前台用户或未认证用户，只返回已审核的评论
@@ -115,7 +116,7 @@ def update_comment(
         raise HTTPException(status_code=404, detail="评论不存在")
     
     # 检查权限：只有评论作者或管理员可以编辑
-    if not user_service.is_superuser(current_user) and comment.author_id != current_user.id:
+    if not is_superuser(current_user) and comment.author_id != current_user.id:
         raise HTTPException(status_code=400, detail="权限不足")
     
     comment = comment_service.update(db=db, db_obj=comment, obj_in=comment_in)
@@ -142,7 +143,7 @@ def delete_comment(
     *,
     db: Session = Depends(get_db),
     comment_id: int = Query(..., description="要删除的评论ID"),
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     删除评论
@@ -152,7 +153,7 @@ def delete_comment(
         raise HTTPException(status_code=404, detail="评论不存在")
     
     # 检查权限：只有评论作者或管理员可以删除
-    if not user_service.is_superuser(current_user) and comment.author_id != current_user.id:
+    if not is_superuser(current_user) and comment.author_id != current_user.id:
         raise HTTPException(status_code=400, detail="权限不足")
     
     comment_service.remove(db=db, id=comment_id)
@@ -164,12 +165,12 @@ def approve_comment(
     *,
     db: Session = Depends(get_db),
     comment_id: int = Query(..., description="要审核的评论ID"),
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     审核通过评论（仅管理员）
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     comment = comment_service.get(db=db, id=comment_id)
@@ -185,12 +186,12 @@ def reject_comment(
     *,
     db: Session = Depends(get_db),
     comment_id: int = Query(..., description="要拒绝的评论ID"),
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     拒绝评论（仅管理员）
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     comment = comment_service.get(db=db, id=comment_id)

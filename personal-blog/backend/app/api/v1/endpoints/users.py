@@ -11,6 +11,7 @@ from pathlib import Path
 from app.api.v1.endpoints.deps import get_db, get_current_active_user, get_current_active_superuser
 from app.schemas.user import User, UserCreate, UserUpdate
 from app.services import user_service
+from app.services.user_service import is_superuser, get_multi, get_by_email, get_by_username, create_user as create, update_user as update, get as get_user
 from app.core.security import verify_password
 
 router = APIRouter()
@@ -26,7 +27,7 @@ def read_users(
     """
     获取用户列表（仅超级用户）
     """
-    users = user_service.get_multi(db, skip=skip, limit=limit)
+    users = get_multi(db, skip=skip, limit=limit)
     return users
 
 
@@ -41,7 +42,7 @@ def create_user(
     创建新用户
     """
     # 检查邮箱是否已存在
-    user = user_service.get_by_email(db, email=user_in.email)
+    user = get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
@@ -49,7 +50,7 @@ def create_user(
         )
     
     # 检查用户名是否已存在
-    user = user_service.get_by_username(db, username=user_in.username)
+    user = get_by_username(db, username=user_in.username)
     if user:
         raise HTTPException(
             status_code=400,
@@ -57,7 +58,7 @@ def create_user(
         )
     
     try:
-        user = user_service.create(db=db, obj_in=user_in)
+        user = create(db=db, obj_in=user_in)
         return user
     except Exception as e:
         # 处理数据库约束违反等异常
@@ -80,7 +81,7 @@ def update_user_me(
     更新当前用户信息
     """
     # 使用传入的数据更新用户信息
-    user = user_service.update(db, db_obj=current_user, obj_in=user_in)
+    user = update(db, db_obj=current_user, obj_in=user_in)
     return user
 
 
@@ -104,7 +105,7 @@ def read_user_by_id(
     """
     根据ID获取用户信息
     """
-    user = user_service.get(db, id=user_id)
+    user = get_user(db, id=user_id)
     if not user:
         raise HTTPException(
             status_code=404,
@@ -113,7 +114,7 @@ def read_user_by_id(
     
     if user == current_user:
         return user
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(
             status_code=400, detail="权限不足"
         )
@@ -131,13 +132,13 @@ def update_user(
     """
     更新用户信息（仅超级用户）
     """
-    user = user_service.get(db, id=user_id)
+    user = get_user(db, id=user_id)
     if not user:
         raise HTTPException(
             status_code=404,
             detail="用户不存在",
         )
-    user = user_service.update(db, db_obj=user, obj_in=user_in)
+    user = update(db, db_obj=user, obj_in=user_in)
     return user
 
 
@@ -183,7 +184,7 @@ def upload_avatar(
         # 更新用户头像URL
         avatar_url = f"/uploads/avatars/{filename}"
         user_update = UserUpdate(avatar=avatar_url)
-        user_service.update(db, db_obj=current_user, obj_in=user_update)
+        update(db, db_obj=current_user, obj_in=user_update)
         
         return {"avatar_url": avatar_url}
         
@@ -222,7 +223,7 @@ def change_password(
     try:
         # 更新密码
         user_update = UserUpdate(password=new_password)
-        user_service.update(db, db_obj=current_user, obj_in=user_update)
+        update(db, db_obj=current_user, obj_in=user_update)
         
         return {"message": "密码修改成功"}
         

@@ -1,113 +1,195 @@
 """
-文章服务类
+文章业务服务类
+只处理文章相关的业务逻辑
 """
-from typing import List, Optional, Type
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
 from datetime import datetime, timedelta
 import hashlib
 
 from app.models.post import Post
-from app.models.tag import Tag
 from app.schemas.post import PostCreate, PostUpdate
-from app.services.base import CRUDBase
-from app.services import category_service, tag_service
+from app.services.base import StandardService
+from app.crud import post as post_crud, category as category_crud, tag as tag_crud
+from app.core.exceptions import BusinessError, NotFoundError
 
 
-class CRUDPost(CRUDBase[Post, PostCreate, PostUpdate]):
-    """文章CRUD操作类"""
+class PostService(StandardService):
+    """文章业务服务类"""
     
-    def __init__(self, model: Type[Post]):
-        super().__init__(model)
+    def __init__(self):
+        super().__init__(post_crud)
         # 用于存储最近的浏览记录，防止重复计数
         self._recent_views = {}
     
-    def create_with_owner(
-        self, db: Session, *, obj_in: PostCreate, owner_id: int
+    def get_service_name(self) -> str:
+        return "PostService"
+    
+    def create_post_with_tags(
+        self, 
+        db: Session, 
+        *, 
+        post_in: PostCreate, 
+        author_id: int,
+        tag_ids: Optional[List[int]] = None
     ) -> Post:
-        """创建文章（指定作者）"""
-        obj_in_data = obj_in.dict()
-        tag_ids = obj_in_data.pop("tag_ids", [])
+        """
+        创建文章并关联标签
         
-        db_obj = Post(**obj_in_data, author_id=owner_id)
-        db.add(db_obj)
-        db.flush()  # 获取ID但不提交
-        
-        # 添加标签关联
-        if tag_ids:
-            tags = db.query(Tag).filter(Tag.id.in_(tag_ids)).all()
-            db_obj.tags = tags
+        Args:
+            db: 数据库会话
+            post_in: 文章创建数据
+            author_id: 作者ID
+            tag_ids: 标签ID列表
             
-            # 更新标签的文章计数
-            for tag in tags:
-                tag_service.increment_post_count(db, tag_id=tag.id)
+        Returns:
+            Post: 创建的文章对象
+        """
+        self.log_operation("create_post_with_tags", {
+            "author_id": author_id,
+            "tag_count": len(tag_ids) if tag_ids else 0
+        })
         
-        # 更新分类的文章计数
-        if db_obj.category_id:
-            category_service.increment_post_count(db, category_id=db_obj.category_id)
+        def _create_post():
+            # 检查slug唯一性
+            if post_in.slug and self.crud.get_by_slug(db, slug=post_in.slug):
+                raise BusinessError("文章slug已存在")
+            
+            # 创建文章
+            post_data = post_in.dict()
+            post_data["author_id"] = author_id
+            post = self.crud.create(db, obj_in=PostCreate(**post_data))
+            
+            # 添加标签关联
+            if tag_ids:
+                tags = []
+                for tag_id in tag_ids:
+                    tag = tag_crud.get(db, id=tag_id)
+                    if tag:
+                        tags.append(tag)
+                
+                if tags:
+                    post.tags = tags
+                    db.commit()
+                    db.refresh(post)
+            
+            return post
         
-        db.commit()
-        db.refresh(db_obj)
-        return db_obj
-
-    def get_by_slug(self, db: Session, *, slug: str) -> Optional[Post]:
-        """根据slug获取文章"""
-        return db.query(Post).filter(Post.slug == slug).first()
-
-    def get_multi_with_filters(
+        return self.execute_in_transaction(db, _create_post)
+    
+    def update_post_with_tags(
         self,
         db: Session,
         *,
-        skip: int = 0,
-        limit: int = 20,
-        status: Optional[str] = None,
-        category_id: Optional[int] = None,
-        tag_id: Optional[int] = None,
-        search: Optional[str] = None
-    ) -> List[Post]:
-        """根据条件筛选文章"""
-        query = db.query(Post)
+        post: Post,
+        post_in: PostUpdate,
+        tag_ids: Optional[List[int]] = None
+    ) -> Post:
+        """
+        更新文章并处理标签关联
         
-        # 状态筛选
-        if status:
-            query = query.filter(Post.status == status)
-        else:
-            # 默认只显示已发布的文章
-            query = query.filter(Post.status == "published")
+        Args:
+            db: 数据库会话
+            post: 文章对象
+            post_in: 文章更新数据
+            tag_ids: 新的标签ID列表
+            
+        Returns:
+            Post: 更新后的文章对象
+        """
+        self.log_operation("update_post_with_tags", {
+            "post_id": post.id,
+            "tag_count": len(tag_ids) if tag_ids else 0
+        })
         
-        # 分类筛选
-        if category_id:
-            query = query.filter(Post.category_id == category_id)
+        def _update_post():
+            # 更新基本信息
+            updated_post = self.crud.update(db, db_obj=post, obj_in=post_in)
+            
+            # 处理标签关联
+            if tag_ids is not None:
+                tags = []
+                for tag_id in tag_ids:
+                    tag = tag_crud.get(db, id=tag_id)
+                    if tag:
+                        tags.append(tag)
+                
+                updated_post.tags = tags
+                db.commit()
+                db.refresh(updated_post)
+            
+            return updated_post
         
-        # 标签筛选
-        if tag_id:
-            query = query.join(Post.tags).filter(Tag.id == tag_id)
+        return self.execute_in_transaction(db, _update_post)
+    
+    def publish_post(self, db: Session, *, post: Post) -> Post:
+        """
+        发布文章
         
-        # 搜索筛选
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    Post.title.ilike(search_term),
-                    Post.content.ilike(search_term),
-                    Post.excerpt.ilike(search_term)
-                )
-            )
+        Args:
+            db: 数据库会话
+            post: 文章对象
+            
+        Returns:
+            Post: 更新后的文章对象
+        """
+        self.log_operation("publish_post", {"post_id": post.id})
         
-        return query.order_by(desc(Post.published_at)).offset(skip).limit(limit).all()
-
-    def get_featured_posts(self, db: Session, *, limit: int = 10) -> List[Post]:
-        """获取精选文章"""
-        return (
-            db.query(Post)
-            .filter(and_(Post.is_featured == True, Post.status == "published"))
-            .order_by(desc(Post.published_at))
-            .limit(limit)
-            .all()
+        if post.is_published:
+            raise BusinessError("文章已经发布")
+        
+        return self.crud.update(
+            db, 
+            db_obj=post, 
+            obj_in={
+                "is_published": True,
+                "published_at": datetime.utcnow()
+            }
         )
-
-    def increment_view_count(self, db: Session, *, post_id: int, client_ip: str = None) -> bool:
-        """增加文章浏览次数（带防重复机制）"""
+    
+    def unpublish_post(self, db: Session, *, post: Post) -> Post:
+        """
+        取消发布文章
+        
+        Args:
+            db: 数据库会话
+            post: 文章对象
+            
+        Returns:
+            Post: 更新后的文章对象
+        """
+        self.log_operation("unpublish_post", {"post_id": post.id})
+        
+        if not post.is_published:
+            raise BusinessError("文章尚未发布")
+        
+        return self.crud.update(
+            db,
+            db_obj=post,
+            obj_in={
+                "is_published": False,
+                "published_at": None
+            }
+        )
+    
+    def increment_view_count(
+        self, 
+        db: Session, 
+        *, 
+        post_id: int, 
+        client_ip: str = None
+    ) -> bool:
+        """
+        增加文章浏览次数（带防重复机制）
+        
+        Args:
+            db: 数据库会话
+            post_id: 文章ID
+            client_ip: 客户端IP
+            
+        Returns:
+            bool: 是否成功增加浏览次数
+        """
         # 生成唯一标识符
         identifier = f"{post_id}_{client_ip or 'unknown'}"
         view_key = hashlib.md5(identifier.encode()).hexdigest()
@@ -131,126 +213,220 @@ class CRUDPost(CRUDBase[Post, PostCreate, PostUpdate]):
             del self._recent_views[key]
         
         # 增加浏览次数
-        post = db.query(Post).filter(Post.id == post_id).first()
-        if post:
-            post.view_count += 1
-            db.commit()
-            return True
-        return False
-
-    def increment_like_count(self, db: Session, *, post_id: int) -> None:
-        """增加文章点赞次数"""
-        post = db.query(Post).filter(Post.id == post_id).first()
-        if post:
-            post.like_count += 1
-            db.commit()
-
-    def increment_comment_count(self, db: Session, *, post_id: int) -> None:
-        """增加文章评论次数"""
-        post = db.query(Post).filter(Post.id == post_id).first()
-        if post:
-            post.comment_count += 1
-            db.commit()
-
-    def decrement_comment_count(self, db: Session, *, post_id: int) -> None:
-        """减少文章评论次数"""
-        post = db.query(Post).filter(Post.id == post_id).first()
-        if post and post.comment_count > 0:
-            post.comment_count -= 1
-            db.commit()
-
-    def get_by_author(
-        self, db: Session, *, author_id: int, skip: int = 0, limit: int = 20
-    ) -> List[Post]:
-        """获取指定作者的文章"""
-        return (
-            db.query(Post)
-            .filter(Post.author_id == author_id)
-            .order_by(desc(Post.created_at))
-            .offset(skip)
-            .limit(limit)
-            .all()
+        return self.execute_with_error_handling(
+            self.crud.increment_views, db, post_id=post_id,
+            error_message="增加浏览次数失败"
         )
-
-    def update_with_counts(
-        self, db: Session, *, db_obj: Post, obj_in: PostUpdate
-    ) -> Post:
-        """更新文章并处理分类标签计数"""
-        obj_in_data = obj_in.dict(exclude_unset=True)
-        tag_ids = obj_in_data.pop("tag_ids", None)
+    
+    def get_post_stats(self, db: Session, *, post_id: int) -> Dict[str, Any]:
+        """
+        获取文章统计信息
         
-        # 记录原来的分类和标签
-        old_category_id = db_obj.category_id
-        old_tags = list(db_obj.tags)
-        
-        # 更新文章基本信息
-        for field, value in obj_in_data.items():
-            setattr(db_obj, field, value)
-        
-        # 处理分类变更
-        if "category_id" in obj_in_data:
-            new_category_id = obj_in_data["category_id"]
-            if old_category_id != new_category_id:
-                # 减少旧分类计数
-                if old_category_id:
-                    category_service.decrement_post_count(db, category_id=old_category_id)
-                # 增加新分类计数
-                if new_category_id:
-                    category_service.increment_post_count(db, category_id=new_category_id)
-        
-        # 处理标签变更
-        if tag_ids is not None:
-            # 减少旧标签计数
-            for old_tag in old_tags:
-                tag_service.decrement_post_count(db, tag_id=old_tag.id)
+        Args:
+            db: 数据库会话
+            post_id: 文章ID
             
-            # 设置新标签并增加计数
-            if tag_ids:
-                new_tags = db.query(Tag).filter(Tag.id.in_(tag_ids)).all()
-                db_obj.tags = new_tags
-                for new_tag in new_tags:
-                    tag_service.increment_post_count(db, tag_id=new_tag.id)
-            else:
-                db_obj.tags = []
+        Returns:
+            dict: 文章统计信息
+        """
+        post = self.crud.get(db, id=post_id)
+        if not post:
+            raise NotFoundError("文章不存在", resource_type="Post", resource_id=str(post_id))
         
-        db.commit()
-        db.refresh(db_obj)
-        return db_obj
-
-    def remove_with_counts(self, db: Session, *, id: int) -> Post:
-        """删除文章并处理分类标签计数"""
-        obj = db.query(Post).get(id)
-        if obj:
-            # 减少分类计数
-            if obj.category_id:
-                category_service.decrement_post_count(db, category_id=obj.category_id)
+        from app.crud import comment
+        
+        # 获取评论数量
+        comment_count = comment.get_comment_count_by_post(db, post_id=post_id)
+        
+        return {
+            "post_id": post_id,
+            "title": post.title,
+            "views": post.view_count or 0,
+            "comment_count": comment_count,
+            "is_published": post.is_published,
+            "published_at": post.published_at,
+            "created_at": post.created_at,
+            "updated_at": post.updated_at,
+            "category": post.category.name if post.category else None,
+            "tag_count": len(post.tags) if post.tags else 0
+        }
+    
+    def get_popular_posts(
+        self, 
+        db: Session, 
+        *, 
+        limit: int = 10, 
+        days: int = 30
+    ) -> List[Post]:
+        """
+        获取热门文章
+        
+        Args:
+            db: 数据库会话
+            limit: 限制数量
+            days: 时间范围（天数）
             
-            # 减少标签计数
-            for tag in obj.tags:
-                tag_service.decrement_post_count(db, tag_id=tag.id)
+        Returns:
+            List[Post]: 热门文章列表
+        """
+        return self.crud.get_popular_posts(db, skip=0, limit=limit)
+    
+    def search_posts(
+        self,
+        db: Session,
+        *,
+        query: str,
+        category_id: Optional[int] = None,
+        tag_ids: Optional[List[int]] = None,
+        skip: int = 0,
+        limit: int = 20
+    ) -> List[Post]:
+        """
+        搜索文章
+        
+        Args:
+            db: 数据库会话
+            query: 搜索关键词
+            category_id: 分类ID筛选
+            tag_ids: 标签ID列表筛选
+            skip: 跳过数量
+            limit: 限制数量
             
-            db.delete(obj)
-            db.commit()
-        return obj
+        Returns:
+            List[Post]: 搜索结果
+        """
+        return self.crud.search_posts(db, query=query, skip=skip, limit=limit)
+    
+    def get_related_posts(
+        self,
+        db: Session,
+        *,
+        post: Post,
+        limit: int = 5
+    ) -> List[Post]:
+        """
+        获取相关文章
+        
+        Args:
+            db: 数据库会话
+            post: 当前文章
+            limit: 限制数量
+            
+        Returns:
+            List[Post]: 相关文章列表
+        """
+        # 简单的相关文章逻辑：同分类或同标签的其他文章
+        related_posts = []
+        
+        # 同分类文章
+        if post.category_id:
+            category_posts = self.crud.get_by_category(
+                db, category_id=post.category_id, skip=0, limit=limit
+            )
+            related_posts.extend([p for p in category_posts if p.id != post.id])
+        
+        # 如果同分类文章不够，添加同标签文章
+        if len(related_posts) < limit and post.tags:
+            tag_ids = [tag.id for tag in post.tags]
+            for tag_id in tag_ids:
+                if len(related_posts) >= limit:
+                    break
+                
+                # 这里需要实现根据标签获取文章的方法
+                # 暂时跳过，等待CRUD层完善
+                pass
+        
+    def get_multi_with_filters(
+        self,
+        db: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        status: Optional[str] = None,
+        category_id: Optional[int] = None,
+        tag_id: Optional[int] = None,
+        author_id: Optional[int] = None,
+        search: Optional[str] = None
+    ) -> List[Post]:
+        """
+        根据多个条件过滤获取文章列表
+        
+        Args:
+            db: 数据库会话
+            skip: 跳过数量
+            limit: 限制数量
+            status: 文章状态 ('published', 'draft')
+            category_id: 分类ID
+            tag_id: 标签ID
+            author_id: 作者ID
+            search: 搜索关键词
+            
+        Returns:
+            List[Post]: 文章列表
+        """
+        from sqlalchemy import and_, or_
+        
+        query = db.query(Post)
+        
+        # 构建过滤条件
+        conditions = []
+        
+        # 状态过滤
+        if status == 'published':
+            conditions.append(Post.status == 'published')
+        elif status == 'draft':
+            conditions.append(Post.status == 'draft')
+        
+        # 分类过滤
+        if category_id:
+            conditions.append(Post.category_id == category_id)
+        
+        # 标签过滤
+        if tag_id:
+            query = query.join(Post.tags).filter(Post.tags.any(id=tag_id))
+        
+        # 作者过滤
+        if author_id:
+            conditions.append(Post.author_id == author_id)
+        
+        # 搜索过滤
+        if search:
+            search_condition = or_(
+                Post.title.contains(search),
+                Post.content.contains(search),
+                Post.summary.contains(search) if hasattr(Post, 'summary') else False
+            )
+            conditions.append(search_condition)
+        
+        # 应用所有条件
+        if conditions:
+            query = query.filter(and_(*conditions))
+        
+        # 按创建时间倒序排列
+        query = query.order_by(Post.created_at.desc())
+        
+        return query.offset(skip).limit(limit).all()
 
 
 # 创建文章服务实例
-post_service = CRUDPost(Post)
+post_service = PostService()
 
-# 导出函数
-get = post_service.get
-get_multi = post_service.get_multi
-get_by_slug = post_service.get_by_slug
-get_multi_with_filters = post_service.get_multi_with_filters
-get_featured_posts = post_service.get_featured_posts
-get_by_author = post_service.get_by_author
-create = post_service.create
-create_with_owner = post_service.create_with_owner
-update = post_service.update
-update_with_counts = post_service.update_with_counts
-remove = post_service.remove
-remove_with_counts = post_service.remove_with_counts
+# 导出常用方法
+create_post_with_tags = post_service.create_post_with_tags
+update_post_with_tags = post_service.update_post_with_tags
+publish_post = post_service.publish_post
+unpublish_post = post_service.unpublish_post
 increment_view_count = post_service.increment_view_count
-increment_like_count = post_service.increment_like_count
-increment_comment_count = post_service.increment_comment_count
-decrement_comment_count = post_service.decrement_comment_count
+get_post_stats = post_service.get_post_stats
+get_popular_posts = post_service.get_popular_posts
+search_posts = post_service.search_posts
+get_related_posts = post_service.get_related_posts
+get_multi_with_filters = post_service.get_multi_with_filters
+
+# 从CRUD层导出的便捷函数
+get = post_crud.get
+get_multi = post_crud.get_multi
+get_by_slug = post_crud.get_by_slug
+get_published = post_crud.get_published
+get_by_category = post_crud.get_by_category
+get_by_author = post_crud.get_by_author

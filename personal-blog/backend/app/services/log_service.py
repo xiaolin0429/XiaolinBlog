@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_
 
-from app.core.database import SessionLocal
+from app.core.config.database import SessionLocal
 from app.models.log import SystemLog, SecurityLog, AccessLog, LogLevel, LogType
-from app.core.data_masker import DataMasker, mask_request_data, mask_response_data
+from app.utils.data_masker import DataMasker, mask_request_data, mask_response_data
 
 
 class LogService:

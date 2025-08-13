@@ -33,7 +33,7 @@ def get_logging_config() -> Dict[str, Any]:
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "json": {
-                "()": "app.core.formatters.JSONFormatter",
+                "()": "app.core.logging.formatters.JSONFormatter",
             },
             "access": {
                 "format": "{asctime} - {name} - {levelname} - {message}",
@@ -43,7 +43,7 @@ def get_logging_config() -> Dict[str, Any]:
         },
         "filters": {
             "correlation_id": {
-                "()": "app.core.filters.CorrelationIdFilter",
+                "()": "app.core.logging.filters.CorrelationIdFilter",
             },
         },
         "handlers": {

@@ -7,7 +7,7 @@ from sqlalchemy import desc
 
 from app.models.tag import Tag
 from app.schemas.tag import TagCreate, TagUpdate
-from app.services.base import CRUDBase
+from app.crud.base import CRUDBase
 
 
 class CRUDTag(CRUDBase[Tag, TagCreate, TagUpdate]):

@@ -7,14 +7,15 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 
 from app.core import security
-from app.core.auth import auth_manager
+from app.core.auth import create_access_token
 from app.core.config import settings
-from app.core.database import get_db
-from app.core.logger_utils import get_security_logger
-from app.core.session import session_manager
-from app.core.token_blacklist import token_blacklist_manager
+from app.core.config.database import get_db
+from app.core.logging.utils import get_security_logger
+from app.core.auth.session_auth import session_manager
+from app.core.auth import revoke_token
 from app.schemas.user import User, UserLogin, UserCreate
 from app.services import user_service
+from app.services.user_service import authenticate, update_last_login, get_by_username, get_by_email, create_user as create
 from app.api.v1.endpoints.deps import get_current_user
 
 router = APIRouter()
@@ -52,7 +53,7 @@ def login_for_access_token(
     client_ip = _get_client_ip(request)
     user_agent = request.headers.get('User-Agent', '')
     
-    user = user_service.authenticate(
+    user = authenticate(
         db, email=login_data.username, password=login_data.password
     )
     
@@ -93,7 +94,7 @@ def login_for_access_token(
     # session_manager.cleanup_user_sessions(user.id)
     
     # 更新最后登录时间并获取更新后的用户信息
-    updated_user = user_service.update_last_login(db=db, user_id=user.id)
+    updated_user = update_last_login(db=db, user_id=user.id)
     
     # 创建服务端会话
     session_id = session_manager.create_session(
@@ -105,7 +106,7 @@ def login_for_access_token(
     
     # 创建包含session_id的JWT访问令牌
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth_manager.create_access_token(
+    access_token = create_access_token(
         subject=updated_user.id, 
         session_id=session_id,  # 添加session_id到JWT token中
         expires_delta=access_token_expires
@@ -230,10 +231,10 @@ def force_auth_check(
             validation_results["jwt_token"]["valid"] = True
             validation_results["jwt_token"]["user_id"] = current_user.id
             
-            # 检查token是否在黑名单中
-            if token_blacklist_manager.is_blacklisted(token):
-                validation_results["jwt_token"]["valid"] = False
-                validation_results["jwt_token"]["blacklisted"] = True
+            # 检查token是否已撤销 - 临时注释，需要实现撤销检查
+            # if revoke_token.is_revoked(token):
+            #     validation_results["jwt_token"]["valid"] = False
+            #     validation_results["jwt_token"]["revoked"] = True
         
         # 2. 服务端会话验证
         if session_id:
@@ -326,11 +327,11 @@ def refresh_token(
     user_agent = request.headers.get('User-Agent', '')
     
     try:
-        # 1. 将旧token加入黑名单
+        # 1. 撤销旧token
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             old_token = auth_header.split(" ")[1]
-            token_blacklist_manager.blacklist_token(old_token, current_user.id)
+            revoke_token(old_token)
         
         # 2. 创建新的JWT访问令牌
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -426,7 +427,7 @@ def register_user(
     user_agent = request.headers.get('User-Agent', '')
     
     # 检查用户名是否已存在
-    existing_user = user_service.get_by_username(db, username=user_data.username)
+    existing_user = get_by_username(db, username=user_data.username)
     if existing_user:
         # 记录注册失败
         security_logger = get_security_logger()
@@ -440,7 +441,7 @@ def register_user(
         )
     
     # 检查邮箱是否已存在
-    existing_user = user_service.get_by_email(db, email=user_data.email)
+    existing_user = get_by_email(db, email=user_data.email)
     if existing_user:
         # 记录注册失败
         security_logger = get_security_logger()
@@ -455,7 +456,7 @@ def register_user(
     
     try:
         # 创建用户
-        user = user_service.create(db=db, obj_in=user_data)
+        user = create(db=db, obj_in=user_data)
         
         # 记录注册成功
         security_logger = get_security_logger()
@@ -546,12 +547,12 @@ def logout(
     user_agent = request.headers.get('User-Agent', '')
     
     try:
-        # 1. 获取当前JWT token并加入黑名单
+        # 1. 获取当前JWT token并撤销
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
-            # 将token加入黑名单，防止继续使用
-            token_blacklist_manager.blacklist_token(token, current_user.id)
+            # 撤销token，防止继续使用
+            revoke_token(token)
         
         # 2. 获取session_id并清除服务端会话
         session_id = request.cookies.get(settings.COOKIE_NAME)

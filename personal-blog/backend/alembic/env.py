@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 # 导入配置和模型
 from app.core.config import settings
-from app.core.database import Base
+from app.core.config.database import Base
 from app.models import user, post, category, tag, comment
 
 # this is the Alembic Config object, which provides

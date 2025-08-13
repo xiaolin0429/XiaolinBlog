@@ -9,6 +9,7 @@ from app.api.v1.endpoints.deps import get_db, get_current_active_user
 from app.schemas.tag import Tag, TagCreate, TagUpdate
 from app.schemas.user import User
 from app.services import tag_service, user_service
+from app.services.user_service import is_superuser
 
 router = APIRouter()
 
@@ -36,7 +37,7 @@ def create_tag(
     """
     创建新标签
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     # 检查标签名称是否已存在
@@ -57,12 +58,12 @@ def update_tag(
     db: Session = Depends(get_db),
     tag_id: int = Query(..., description="要更新的标签ID"),
     tag_in: TagUpdate,
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     更新标签
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     tag = tag_service.get(db=db, id=tag_id)
@@ -88,12 +89,12 @@ def delete_tag(
     *,
     db: Session = Depends(get_db),
     tag_id: int = Query(..., description="要删除的标签ID"),
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     删除标签
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     tag = tag_service.get(db=db, id=tag_id)

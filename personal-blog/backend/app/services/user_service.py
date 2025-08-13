@@ -1,196 +1,259 @@
 """
-用户服务类
+用户业务服务类
+只处理用户相关的业务逻辑
 """
-from typing import Any, Dict, Optional, Union
+from typing import Dict, List, Optional
+from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
-from pydantic import ValidationError
-from sqlalchemy.orm import Session
-
-from app.core import security
-from app.core.config import settings
-from app.core.database import get_db
+from app.crud.user import user as user_crud
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
-from app.services.base import CRUDBase
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/login"
-)
+from app.schemas.user import UserCreate, UserUpdate, UserInDB
+from app.core.security import get_password_hash, verify_password
 
 
-class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
-    """用户CRUD操作类"""
+class UserService:
+    """用户业务服务类"""
     
-    def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
-        """根据邮箱获取用户"""
-        return db.query(User).filter(User.email == email).first()
-
-    def get_by_username(self, db: Session, *, username: str) -> Optional[User]:
-        """根据用户名获取用户"""
-        return db.query(User).filter(User.username == username).first()
-
-    def create(self, db: Session, *, obj_in: UserCreate) -> User:
-        """创建用户"""
-        db_obj = User(
-            email=obj_in.email,
-            username=obj_in.username,
-            hashed_password=security.get_password_hash(obj_in.password),
-            full_name=obj_in.full_name,
-            avatar=obj_in.avatar,
-            bio=obj_in.bio,
-            is_active=obj_in.is_active,
-        )
-        db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
-        return db_obj
-
-    def update(
-        self, db: Session, *, db_obj: User, obj_in: Union[UserUpdate, Dict[str, Any]]
+    def __init__(self):
+        self.crud = user_crud
+    
+    def create_user(self, db: Session, *, user_in: UserCreate) -> User:
+        """
+        创建新用户
+        
+        Args:
+            db: 数据库会话
+            user_in: 用户创建数据
+            
+        Returns:
+            User: 创建的用户对象
+        """
+        # 检查邮箱是否已存在
+        if self.crud.get_by_email(db, email=user_in.email):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="邮箱已存在")
+        
+        # 检查用户名是否已存在
+        if self.crud.get_by_username(db, username=user_in.username):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="用户名已存在")
+        
+        return self.crud.create(db, obj_in=user_in)
+    
+    def update_user(
+        self, 
+        db: Session, 
+        *, 
+        current_user: User, 
+        user_in: UserUpdate
     ) -> User:
-        """更新用户"""
-        if isinstance(obj_in, dict):
-            update_data = obj_in
-        else:
-            update_data = obj_in.dict(exclude_unset=True)
-        if update_data.get("password"):
-            hashed_password = security.get_password_hash(update_data["password"])
-            del update_data["password"]
-            update_data["hashed_password"] = hashed_password
-        return super().update(db, db_obj=db_obj, obj_in=update_data)
-
-    def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
-        """用户认证 - 支持邮箱或用户名登录"""
-        # 首先尝试通过邮箱查找用户
-        user = self.get_by_email(db, email=email)
+        """
+        更新用户信息
         
-        # 如果邮箱查找失败，尝试通过用户名查找
-        if not user:
-            user = self.get_by_username(db, username=email)
-        
-        if not user:
-            return None
-        if not security.verify_password(password, user.hashed_password):
-            return None
-        return user
-
-    def is_active(self, user: User) -> bool:
-        """检查用户是否激活"""
-        return user.is_active
-
-    def is_superuser(self, user: User) -> bool:
-        """检查用户是否为超级用户"""
-        return user.is_superuser
-
-    def update_last_login(self, db: Session, *, user_id: int) -> User:
-        """更新用户最后登录时间（不触发updated_at字段更新）"""
-        print(f"🔍 正在更新用户 {user_id} 的最后登录时间...")
-        user = self.get(db, id=user_id)
-        if user:
-            from datetime import timezone
-            current_time = datetime.now(timezone.utc)
-            print(f"⏰ 设置最后登录时间为: {current_time}")
+        Args:
+            db: 数据库会话
+            current_user: 当前用户
+            user_in: 用户更新数据
             
-            # 使用原生SQL更新，避免触发updated_at字段的自动更新
-            from sqlalchemy import text
-            db.execute(
-                text("UPDATE users SET last_login = :last_login WHERE id = :user_id"),
-                {"last_login": current_time, "user_id": user_id}
+        Returns:
+            User: 更新后的用户对象
+        """
+        # 如果要更新邮箱，检查是否已存在
+        if user_in.email and user_in.email != current_user.email:
+            existing_user = self.crud.get_by_email(db, email=user_in.email)
+            if existing_user and existing_user.id != current_user.id:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="邮箱已存在")
+        
+        # 如果要更新用户名，检查是否已存在
+        if user_in.username and user_in.username != current_user.username:
+            existing_user = self.crud.get_by_username(db, username=user_in.username)
+            if existing_user and existing_user.id != current_user.id:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="用户名已存在")
+        
+        return self.crud.update(db, db_obj=current_user, obj_in=user_in)
+    
+    def change_password(
+        self, 
+        db: Session, 
+        *, 
+        user: User, 
+        old_password: str, 
+        new_password: str
+    ) -> User:
+        """
+        修改密码
+        
+        Args:
+            db: 数据库会话
+            user: 用户对象
+            old_password: 旧密码
+            new_password: 新密码
+            
+        Returns:
+            User: 更新后的用户对象
+        """
+        # 验证旧密码
+        if not verify_password(old_password, user.hashed_password):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="旧密码错误")
+        
+        # 更新密码
+        hashed_password = get_password_hash(new_password)
+        return self.crud.update(db, db_obj=user, obj_in={"hashed_password": hashed_password})
+    
+    def reset_password(self, db: Session, *, user: User, new_password: str) -> User:
+        """
+        重置密码（管理员功能）
+        
+        Args:
+            db: 数据库会话
+            user: 用户对象
+            new_password: 新密码
+            
+        Returns:
+            User: 更新后的用户对象
+        """
+        hashed_password = get_password_hash(new_password)
+        return self.crud.update(db, db_obj=user, obj_in={"hashed_password": hashed_password})
+    
+    def activate_user(self, db: Session, *, user: User) -> User:
+        """
+        激活用户
+        
+        Args:
+            db: 数据库会话
+            user: 用户对象
+            
+        Returns:
+            User: 更新后的用户对象
+        """
+        return self.crud.update(db, db_obj=user, obj_in={"is_active": True})
+    
+    def deactivate_user(self, db: Session, *, user: User) -> User:
+        """
+        停用用户
+        
+        Args:
+            db: 数据库会话
+            user: 用户对象
+            
+        Returns:
+            User: 更新后的用户对象
+        """
+        return self.crud.update(db, db_obj=user, obj_in={"is_active": False})
+    
+    def get_user_stats(self, db: Session, *, user_id: int) -> Dict:
+        """
+        获取用户统计信息
+        
+        Args:
+            db: 数据库会话
+            user_id: 用户ID
+            
+        Returns:
+            dict: 用户统计信息
+        """
+        user = self.crud.get(db, id=user_id)
+        if not user:
+            return {}
+        
+        from app.crud import post, comment
+        
+        # 获取用户发布的文章数量
+        user_posts = post.get_by_author(db, author_id=user_id)
+        published_posts_count = sum(1 for p in user_posts if p.is_published)
+        draft_posts_count = sum(1 for p in user_posts if not p.is_published)
+        
+        # 获取用户评论数量
+        user_comments = comment.get_by_author(db, author_id=user_id)
+        comments_count = len(user_comments)
+        
+        return {
+            "user_id": user_id,
+            "username": user.username,
+            "published_posts": published_posts_count,
+            "draft_posts": draft_posts_count,
+            "comments": comments_count,
+            "created_at": user.created_at,
+            "last_login": user.last_login,
+            "is_active": user.is_active,
+            "is_superuser": user.is_superuser
+        }
+    
+    def search_users(
+        self, 
+        db: Session, 
+        *, 
+        query: str, 
+        skip: int = 0, 
+        limit: int = 100
+    ) -> List[User]:
+        """
+        搜索用户
+        
+        Args:
+            db: 数据库会话
+            query: 搜索关键词
+            skip: 跳过数量
+            limit: 限制数量
+            
+        Returns:
+            List[User]: 用户列表
+        """
+        # 简单的用户搜索，可以根据用户名和邮箱搜索
+        from sqlalchemy import or_
+        
+        return (
+            db.query(User)
+            .filter(
+                or_(
+                    User.username.contains(query),
+                    User.email.contains(query),
+                    User.full_name.contains(query) if hasattr(User, 'full_name') else False
+                )
             )
-            db.commit()
+            .filter(User.is_active == True)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    
+    def update_last_login(self, db: Session, *, user_id: int) -> User:
+        """
+        更新用户最后登录时间
+        
+        Args:
+            db: 数据库会话
+            user_id: 用户ID
             
-            # 重新获取用户信息
-            db.refresh(user)
-            print(f"✅ 用户 {user.username} 的最后登录时间已更新为: {user.last_login}")
-        else:
-            print(f"❌ 未找到用户 ID: {user_id}")
-        return user
+        Returns:
+            User: 更新后的用户对象
+        """
+        return self.crud.update_last_login(db, user_id=user_id)
 
 
 # 创建用户服务实例
-user_service = CRUDUser(User)
+user_service = UserService()
 
-
-def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> User:
-    """获取当前用户"""
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        token_data = payload.get("sub")
-    except (jwt.JWTError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="无法验证凭据",
-        )
-    user = user_service.get(db, id=token_data)
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    return user
-
-
-def get_current_active_user(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    """获取当前激活用户"""
-    if not user_service.is_active(current_user):
-        raise HTTPException(status_code=400, detail="用户未激活")
-    return current_user
-
-
-def get_current_active_superuser(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    """获取当前激活的超级用户"""
-    if not user_service.is_superuser(current_user):
-        raise HTTPException(
-            status_code=400, detail="权限不足"
-        )
-    return current_user
-
-
-def get_current_user_optional(
-    db: Session = Depends(get_db), 
-    authorization: Optional[str] = None
-) -> Optional[User]:
-    """获取当前用户（可选，用于评论等功能）"""
-    try:
-        if not authorization:
-            return None
-        
-        # 从Authorization头中提取token
-        if not authorization.startswith("Bearer "):
-            return None
-        
-        token = authorization[7:]  # 移除 "Bearer " 前缀
-        
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
-        token_data = payload.get("sub")
-        if not token_data:
-            return None
-        user = user_service.get(db, id=token_data)
-        return user
-    except (jwt.JWTError, ValidationError):
-        return None
-
-
-# 导出函数
-authenticate = user_service.authenticate
-get_by_email = user_service.get_by_email
-get_by_username = user_service.get_by_username
-is_active = user_service.is_active
-is_superuser = user_service.is_superuser
-get_multi = user_service.get_multi
-get = user_service.get
-create = user_service.create
-update = user_service.update
-remove = user_service.remove
+# 导出常用方法
+create_user = user_service.create_user
+update_user = user_service.update_user
+change_password = user_service.change_password
+reset_password = user_service.reset_password
+activate_user = user_service.activate_user
+deactivate_user = user_service.deactivate_user
+get_user_stats = user_service.get_user_stats
+search_users = user_service.search_users
 update_last_login = user_service.update_last_login
+
+# 从CRUD层导出的便捷函数
+get = user_crud.get
+get_multi = user_crud.get_multi
+get_by_email = user_crud.get_by_email
+get_by_username = user_crud.get_by_username
+authenticate = user_crud.authenticate
+is_active = user_crud.is_active
+is_superuser = user_crud.is_superuser

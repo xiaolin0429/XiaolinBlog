@@ -6,7 +6,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.config.database import get_db
 from app.core.session import session_manager
 from app.api.v1.endpoints.deps import get_current_user, get_current_active_superuser
 from app.schemas.session import (

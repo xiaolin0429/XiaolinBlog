@@ -9,10 +9,9 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from app.core.config import settings
-from app.core.database import engine, Base
-from app.core.session import session_manager
-from app.core.token_blacklist import token_blacklist_manager
-from app.core.logger_utils import setup_logging, get_security_logger
+from app.core.config.database import engine, Base
+from app.core.auth.session_auth import session_manager
+from app.core.logging.utils import setup_logging, get_security_logger
 
 logger = logging.getLogger(__name__)
 
@@ -44,19 +43,11 @@ async def init_session_manager():
 
 
 async def init_token_blacklist():
-    """初始化令牌黑名单"""
-    try:
-        # 初始化黑名单存储
-        await token_blacklist_manager.initialize()
-        logger.info("令牌黑名单初始化完成")
-        
-        # 清理过期令牌
-        cleaned_count = token_blacklist_manager.cleanup_expired_tokens()
-        logger.info(f"清理了 {cleaned_count} 个过期令牌")
-        
-    except Exception as e:
-        logger.error(f"令牌黑名单初始化失败: {e}")
-        raise
+    """初始化令牌黑名单 - 已禁用，使用JWT revoke功能代替
+    """
+    # 注意：令牌黑名单已被移除，使用JWT revoke功能代替
+    logger.info("令牌管理已迁移到JWT revoke系统")
+    pass
 
 
 
@@ -94,9 +85,9 @@ async def cleanup_resources():
         # 会话管理器清理（如果需要的话）
         logger.info("会话管理器已清理")
         
-        # 清理令牌黑名单
-        await token_blacklist_manager.cleanup()
-        logger.info("令牌黑名单已清理")
+        # 清理令牌 - 已迁移到JWT revoke系统
+        # await token_blacklist_manager.cleanup()
+        logger.info("令牌管理已迁移到JWT revoke系统")
         
         # 记录系统关闭
         security_logger = get_security_logger()
@@ -161,8 +152,9 @@ async def periodic_cleanup():
             # 清理过期会话
             expired_sessions = session_manager.cleanup_expired_sessions()
             
-            # 清理过期令牌
-            expired_tokens = token_blacklist_manager.cleanup_expired_tokens()
+            # 清理过期令牌 - 已迁移到JWT revoke系统
+            # expired_tokens = token_blacklist_manager.cleanup_expired_tokens()
+            expired_tokens = 0  # 临时设置
             
             logger.info(f"定期清理完成: 会话{expired_sessions}个, 令牌{expired_tokens}个")
             

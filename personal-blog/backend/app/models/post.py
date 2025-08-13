@@ -4,7 +4,7 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Table
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.config.database import Base
 
 # 文章标签关联表
 post_tags = Table(

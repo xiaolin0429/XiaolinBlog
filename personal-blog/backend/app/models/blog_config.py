@@ -5,7 +5,7 @@
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, JSON, Enum as SQLEnum
 from sqlalchemy.sql import func
-from app.core.database import Base
+from app.core.config.database import Base
 import enum
 
 

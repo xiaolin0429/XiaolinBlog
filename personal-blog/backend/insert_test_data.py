@@ -3,7 +3,7 @@
 """
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.config.database import SessionLocal
 from app.models.user import User
 from app.models.category import Category
 from app.models.tag import Tag

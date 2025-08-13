@@ -9,6 +9,7 @@ from app.api.v1.endpoints.deps import get_db, get_current_active_user
 from app.schemas.post import Post, PostCreate, PostUpdate, PostList
 from app.schemas.user import User
 from app.services import post_service, user_service
+from app.services.user_service import is_superuser
 
 router = APIRouter()
 
@@ -94,7 +95,7 @@ def update_post(
     post = post_service.get(db=db, id=post_id)
     if not post:
         raise HTTPException(status_code=404, detail="文章不存在")
-    if not user_service.is_superuser(current_user) and (post.author_id != current_user.id):
+    if not is_superuser(current_user) and (post.author_id != current_user.id):
         raise HTTPException(status_code=400, detail="权限不足")
     post = post_service.update_with_counts(db=db, db_obj=post, obj_in=post_in)
     return post
@@ -113,7 +114,7 @@ def delete_post(
     post = post_service.get(db=db, id=post_id)
     if not post:
         raise HTTPException(status_code=404, detail="文章不存在")
-    if not user_service.is_superuser(current_user) and (post.author_id != current_user.id):
+    if not is_superuser(current_user) and (post.author_id != current_user.id):
         raise HTTPException(status_code=400, detail="权限不足")
     post = post_service.remove_with_counts(db=db, id=post_id)
     return {"message": "文章删除成功"}

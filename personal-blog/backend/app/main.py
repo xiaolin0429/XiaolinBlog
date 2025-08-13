@@ -8,8 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from app.core.config import settings
-from app.core.logging_config import setup_logging
-from app.core.logger_utils import get_logger
+from app.core.logging.config import setup_logging
+from app.core.logging.utils import get_logger
 from app.middleware.logging_middleware import LoggingMiddleware
 from app.api.v1.api import api_router
 

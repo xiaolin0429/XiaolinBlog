@@ -5,7 +5,7 @@
 
 import asyncio
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal, engine
+from app.core.config.database import SessionLocal, engine
 from app.models.blog_config import BlogConfig, ConfigGroup
 from app.crud import blog_config, config_group
 

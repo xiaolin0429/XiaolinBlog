@@ -9,6 +9,7 @@ from app.api.v1.endpoints.deps import get_db, get_current_active_user
 from app.schemas.category import Category, CategoryCreate, CategoryUpdate
 from app.schemas.user import User
 from app.services import category_service, user_service
+from app.services.user_service import is_superuser
 
 router = APIRouter()
 
@@ -36,7 +37,7 @@ def create_category(
     """
     创建新分类
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     # 检查分类名称是否已存在
@@ -57,12 +58,12 @@ def update_category(
     db: Session = Depends(get_db),
     category_id: int = Query(..., description="要更新的分类ID"),
     category_in: CategoryUpdate,
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     更新分类
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     category = category_service.get(db=db, id=category_id)
@@ -88,12 +89,12 @@ def delete_category(
     *,
     db: Session = Depends(get_db),
     category_id: int = Query(..., description="要删除的分类ID"),
-    current_user: User = Depends(user_service.get_current_active_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     删除分类
     """
-    if not user_service.is_superuser(current_user):
+    if not is_superuser(current_user):
         raise HTTPException(status_code=400, detail="权限不足")
     
     category = category_service.get(db=db, id=category_id)

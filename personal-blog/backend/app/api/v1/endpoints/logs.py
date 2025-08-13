@@ -67,7 +67,7 @@ def get_security_logs(
 @router.get("/access", response_model=List[dict])
 def get_access_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(user_service.get_current_active_superuser),
+    current_user: User = Depends(get_current_active_superuser),
     skip: int = Query(0, ge=0, description="跳过的记录数"),
     limit: int = Query(100, ge=1, le=1000, description="返回的记录数"),
     method: Optional[str] = Query(None, description="HTTP方法过滤"),
@@ -117,7 +117,7 @@ def get_access_logs(
 @router.get("/system", response_model=List[dict])
 def get_system_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(user_service.get_current_active_superuser),
+    current_user: User = Depends(get_current_active_superuser),
     skip: int = Query(0, ge=0, description="跳过的记录数"),
     limit: int = Query(100, ge=1, le=1000, description="返回的记录数"),
     level: Optional[str] = Query(None, description="日志级别过滤"),
@@ -166,7 +166,7 @@ def get_system_logs(
 @router.get("/stats", response_model=dict)
 def get_log_statistics(
     db: Session = Depends(get_db),
-    current_user: User = Depends(user_service.get_current_active_superuser),
+    current_user: User = Depends(get_current_active_superuser),
     days: int = Query(7, ge=1, le=30, description="统计天数")
 ) -> Any:
     """
@@ -237,7 +237,7 @@ def get_log_statistics(
 @router.delete("/cleanup")
 def cleanup_old_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(user_service.get_current_active_superuser),
+    current_user: User = Depends(get_current_active_superuser),
     days: int = Query(30, ge=7, le=365, description="保留天数")
 ) -> Any:
     """
