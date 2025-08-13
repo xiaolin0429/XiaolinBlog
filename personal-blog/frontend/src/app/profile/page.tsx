@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../application/hooks/useAuth';
+import { AuthGuard } from '../../components/AuthGuard';
 import { usersApi } from '@/lib/api/users';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,9 +28,8 @@ interface PasswordFormData {
   confirm_password: string;
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const { user } = useAuth();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   
@@ -58,13 +57,6 @@ export default function ProfilePage() {
       });
     }
   }, [user]);
-
-  // 如果用户未登录，重定向到登录页
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,10 +143,6 @@ export default function ProfilePage() {
     }
   };
 
-  if (!user) {
-    return null; // 或者显示加载状态
-  }
-
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       {/* 页面标题 */}
@@ -198,11 +186,11 @@ export default function ProfilePage() {
                 <div className="relative">
                   <Avatar className="h-24 w-24">
                     <AvatarImage 
-                      src={user.avatar ? `http://localhost:8000${user.avatar}` : undefined} 
-                      alt={user.username} 
+                      src={user?.avatar ? `http://localhost:8000${user.avatar}` : undefined} 
+                      alt={user?.username} 
                     />
                     <AvatarFallback className="text-2xl">
-                      {user.username?.charAt(0).toUpperCase()}
+                      {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <label 
@@ -346,5 +334,13 @@ export default function ProfilePage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <AuthGuard>
+      <ProfilePageContent />
+    </AuthGuard>
   );
 }

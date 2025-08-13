@@ -213,10 +213,14 @@ class PostService(StandardService):
             del self._recent_views[key]
         
         # 增加浏览次数
-        return self.execute_with_error_handling(
-            self.crud.increment_views, db, post_id=post_id,
-            error_message="增加浏览次数失败"
-        )
+        try:
+            success = self.crud.increment_views(db, post_id=post_id)
+            if not success:
+                self.logger.warning(f"文章不存在，无法增加浏览次数: post_id={post_id}")
+            return success
+        except Exception as e:
+            self.logger.error(f"增加浏览次数失败: {str(e)}")
+            return False
     
     def get_post_stats(self, db: Session, *, post_id: int) -> Dict[str, Any]:
         """

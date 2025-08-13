@@ -11,7 +11,8 @@ from pathlib import Path
 from app.api.v1.endpoints.deps import get_db, get_current_active_user, get_current_active_superuser
 from app.schemas.user import User, UserCreate, UserUpdate
 from app.services import user_service
-from app.services.user_service import is_superuser, get_multi, get_by_email, get_by_username, create_user as create, update_user as update, get as get_user
+from app.services.user_service import is_superuser, get_multi, get_by_email, get_by_username, create_user as create, update_user as update_current_user, get as get_user
+from app.crud.user import user as user_crud
 from app.core.security import verify_password
 
 router = APIRouter()
@@ -81,7 +82,7 @@ def update_user_me(
     更新当前用户信息
     """
     # 使用传入的数据更新用户信息
-    user = update(db, db_obj=current_user, obj_in=user_in)
+    user = update_current_user(db, current_user=current_user, user_in=user_in)
     return user
 
 
@@ -138,7 +139,7 @@ def update_user(
             status_code=404,
             detail="用户不存在",
         )
-    user = update(db, db_obj=user, obj_in=user_in)
+    user = user_crud.update(db, db_obj=user, obj_in=user_in)
     return user
 
 
@@ -184,7 +185,7 @@ def upload_avatar(
         # 更新用户头像URL
         avatar_url = f"/uploads/avatars/{filename}"
         user_update = UserUpdate(avatar=avatar_url)
-        update(db, db_obj=current_user, obj_in=user_update)
+        user_crud.update(db, db_obj=current_user, obj_in=user_update)
         
         return {"avatar_url": avatar_url}
         
@@ -223,7 +224,7 @@ def change_password(
     try:
         # 更新密码
         user_update = UserUpdate(password=new_password)
-        update(db, db_obj=current_user, obj_in=user_update)
+        user_crud.update(db, db_obj=current_user, obj_in=user_update)
         
         return {"message": "密码修改成功"}
         

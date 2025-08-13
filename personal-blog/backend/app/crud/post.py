@@ -85,15 +85,21 @@ class CRUDPost(CRUDBase[Post, PostCreate, PostUpdate]):
             .all()
         )
 
-    def increment_views(self, db: Session, *, post_id: int) -> Post:
+    def increment_views(self, db: Session, *, post_id: int) -> bool:
         """增加文章浏览量"""
         post = self.get(db, id=post_id)
-        if post:
+        if not post:
+            return False
+        
+        try:
             post.view_count = (post.view_count or 0) + 1
             db.add(post)
             db.commit()
             db.refresh(post)
-        return post
+            return True
+        except Exception as e:
+            db.rollback()
+            raise e
 
 
 # 创建文章CRUD实例

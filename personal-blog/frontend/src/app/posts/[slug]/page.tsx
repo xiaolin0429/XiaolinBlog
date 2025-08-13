@@ -2,13 +2,14 @@ import { postsAPI } from '@/lib/api/posts';
 import PostDetail from '@/components/post-detail';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function PostPage({ params }: PageProps) {
-  return <PostDetail slug={params.slug} />;
+export default async function PostPage({ params }: PageProps) {
+  const { slug } = await params;
+  return <PostDetail slug={slug} />;
 }
 
 // 生成静态参数（用于静态生成）
@@ -24,7 +25,8 @@ export async function generateStaticParams() {
 // 生成元数据
 export async function generateMetadata({ params }: PageProps) {
   try {
-    const post = await postsAPI.getPostBySlug(params.slug);
+    const { slug } = await params;
+    const post = await postsAPI.getPostBySlug(slug);
     return {
       title: post.title,
       description: post.excerpt || post.content.substring(0, 160),
