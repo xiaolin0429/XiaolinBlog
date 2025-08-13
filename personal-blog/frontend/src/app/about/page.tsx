@@ -185,7 +185,7 @@ export default function AboutPage() {
         <div className="bg-muted/50 rounded-lg p-8">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              "学而时习之，不亦说乎？" 我相信最好的学习方式就是分享和教学。
+              &#34;学而时习之，不亦说乎？&#34; 我相信最好的学习方式就是分享和教学。
               通过写博客，我不仅能够巩固自己的知识，还能帮助其他开发者解决问题。
             </p>
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
