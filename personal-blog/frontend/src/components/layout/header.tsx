@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Menu, X, Search, User, Moon, Sun, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuth } from "../../application/hooks/useAuth";
-import { useSiteConfig } from "@/hooks/use-site-config";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 import {
   Button,
   Input,

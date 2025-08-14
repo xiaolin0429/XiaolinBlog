@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from 'react'
-import { useSiteConfig } from '@/hooks/use-site-config'
+import { useSiteConfig } from '@/contexts/SiteConfigContext'
 
 export function DynamicMetadata() {
   const { getSiteInfo, getSeoSettings, loading } = useSiteConfig()

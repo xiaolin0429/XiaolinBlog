@@ -2,7 +2,7 @@
 API v1 主路由
 """
 from fastapi import APIRouter
-from .endpoints import users, posts, categories, tags, comments, auth, logs, session, image_upload, image_serve, blog_config
+from .endpoints import users, posts, categories, tags, comments, auth, logs, session, image_upload, image_serve, blog_config, blog_config_public
 
 api_router = APIRouter()
 
@@ -36,5 +36,8 @@ api_router.include_router(image_upload.router, prefix="/image", tags=["图片上
 # 图片服务路由
 api_router.include_router(image_serve.router, prefix="/image", tags=["图片服务"])
 
-# 博客配置路由
+# 博客配置路由（管理员）
 api_router.include_router(blog_config.router, prefix="/blog-config", tags=["博客配置"])
+
+# 博客配置公开路由（无需认证）
+api_router.include_router(blog_config_public.router, prefix="/public/blog-config", tags=["博客配置-公开"])

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Github, Mail, Phone, MapPin, MessageCircle, Twitter } from "lucide-react";
-import { useSiteConfig } from "@/hooks/use-site-config";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
 export function Footer() {
   const { getSiteInfo, getSocialLinks, getOtherSettings, loading } = useSiteConfig();

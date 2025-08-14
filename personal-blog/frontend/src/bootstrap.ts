@@ -9,12 +9,8 @@ import { HttpClient } from './infrastructure/api/HttpClient'
 import { EventBusService } from './infrastructure/services/EventBusService'
 import { LocalStorageService, SessionStorageService } from './infrastructure/storage/StorageService'
 import { AuthApi } from './infrastructure/api/AuthApi'
-import { ConfigApi } from './infrastructure/api/ConfigApi'
-import { ConfigApiAdapter } from './infrastructure/api/ConfigApiAdapter'
 import { AuthService } from './infrastructure/services/AuthService'
 import { LoginUseCase } from './application/usecases/LoginUseCase'
-import { ConfigManagementUseCase } from './application/usecases/ConfigManagementUseCase'
-import { SiteConfigUseCase } from './application/usecases/SiteConfigUseCase'
 
 // 全局容器实例
 let container: DIContainer | null = null
@@ -79,14 +75,6 @@ export async function initializeContainer(): Promise<DIContainer> {
     dependencies: [SERVICE_TOKENS.HTTP_CLIENT]
   })
 
-  container.registerSingleton(SERVICE_TOKENS.CONFIG_API, {
-    create: async (container) => {
-      const httpClient = await container.resolve(SERVICE_TOKENS.HTTP_CLIENT) as any
-      return new ConfigApi(httpClient)
-    },
-    dependencies: [SERVICE_TOKENS.HTTP_CLIENT]
-  })
-
   // 注册业务服务
   container.registerSingleton(SERVICE_TOKENS.AUTH_SERVICE, {
     create: async (container) => {
@@ -108,25 +96,6 @@ export async function initializeContainer(): Promise<DIContainer> {
     dependencies: [SERVICE_TOKENS.AUTH_SERVICE, SERVICE_TOKENS.EVENT_BUS]
   })
 
-  container.registerSingleton(SERVICE_TOKENS.CONFIG_MANAGEMENT_USE_CASE, {
-    create: async (container) => {
-      const configApi = await container.resolve(SERVICE_TOKENS.CONFIG_API) as any
-      const eventBus = await container.resolve(SERVICE_TOKENS.EVENT_BUS) as any
-      return new ConfigManagementUseCase(configApi, eventBus)
-    },
-    dependencies: [SERVICE_TOKENS.CONFIG_API, SERVICE_TOKENS.EVENT_BUS]
-  })
-
-  container.registerSingleton(SERVICE_TOKENS.SITE_CONFIG_USE_CASE, {
-    create: async (container) => {
-      const configApi = await container.resolve(SERVICE_TOKENS.CONFIG_API) as any
-      const eventBus = await container.resolve(SERVICE_TOKENS.EVENT_BUS) as any
-      const configApiAdapter = new ConfigApiAdapter(configApi)
-      return new SiteConfigUseCase(configApiAdapter, eventBus)
-    },
-    dependencies: [SERVICE_TOKENS.CONFIG_API, SERVICE_TOKENS.EVENT_BUS]
-  })
-
   // 分步初始化服务，避免批量预热导致的循环依赖
   try {
     // 先初始化基础服务
@@ -137,20 +106,12 @@ export async function initializeContainer(): Promise<DIContainer> {
 
     // 然后初始化API服务
     await container.resolve(SERVICE_TOKENS.AUTH_API)
-    await container.resolve(SERVICE_TOKENS.CONFIG_API)
 
     // 接着初始化业务服务
     await container.resolve(SERVICE_TOKENS.AUTH_SERVICE)
 
     // 最后初始化用例
     await container.resolve(SERVICE_TOKENS.LOGIN_USE_CASE)
-    const configManagementUseCase = await container.resolve(SERVICE_TOKENS.CONFIG_MANAGEMENT_USE_CASE) as any
-    await container.resolve(SERVICE_TOKENS.SITE_CONFIG_USE_CASE)
-
-    // 设置全局访问
-    if (typeof window !== 'undefined') {
-      globalThis.configManagementUseCase = configManagementUseCase
-    }
 
     console.log('依赖注入容器初始化完成', container.getDebugInfo())
   } catch (error) {

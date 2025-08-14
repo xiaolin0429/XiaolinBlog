@@ -89,6 +89,16 @@ export function useBlogConfig() {
     }
   }, []);
 
+  // 获取网站基础信息
+  const fetchSiteInfo = useCallback(async () => {
+    try {
+      return await blogConfigAPI.getSiteInfo();
+    } catch (err) {
+      console.error('获取网站信息失败:', err);
+      throw err;
+    }
+  }, []);
+
   // 更新单个配置
   const updateConfig = useCallback(async (id: number, data: any) => {
     try {

@@ -12,15 +12,12 @@ export const SERVICE_TOKENS = {
   
   // API服务
   AUTH_API: Symbol('AuthApi'),
-  CONFIG_API: Symbol('ConfigApi'),
   
   // 业务服务
   AUTH_SERVICE: Symbol('AuthService'),
   
   // 用例
   LOGIN_USE_CASE: Symbol('LoginUseCase'),
-  CONFIG_MANAGEMENT_USE_CASE: Symbol('ConfigManagementUseCase'),
-  SITE_CONFIG_USE_CASE: Symbol('SiteConfigUseCase'),
   
   // 配置
   API_CONFIG: Symbol('ApiConfig'),
@@ -36,11 +33,8 @@ export interface ServiceMap {
   [SERVICE_TOKENS.STORAGE_SERVICE]: import('../infrastructure/storage/StorageService').LocalStorageService
   [SERVICE_TOKENS.SESSION_STORAGE_SERVICE]: import('../infrastructure/storage/StorageService').SessionStorageService
   [SERVICE_TOKENS.AUTH_API]: import('../infrastructure/api/AuthApi').AuthApi
-  [SERVICE_TOKENS.CONFIG_API]: import('../infrastructure/api/ConfigApi').ConfigApi
   [SERVICE_TOKENS.AUTH_SERVICE]: import('../infrastructure/services/AuthService').AuthService
   [SERVICE_TOKENS.LOGIN_USE_CASE]: import('../application/usecases/LoginUseCase').LoginUseCase
-  [SERVICE_TOKENS.CONFIG_MANAGEMENT_USE_CASE]: import('../application/usecases/ConfigManagementUseCase').ConfigManagementUseCase
-  [SERVICE_TOKENS.SITE_CONFIG_USE_CASE]: import('../application/usecases/SiteConfigUseCase').SiteConfigUseCase
   [SERVICE_TOKENS.API_CONFIG]: ApiConfig
   [SERVICE_TOKENS.APP_CONFIG]: AppConfig
 }

@@ -45,7 +45,7 @@ def get_configs(
     current_user: User = Depends(get_current_active_superuser)
 ) -> List[BlogConfigResponse]:
     """
-    获取博客配置列表
+    获取博客配置列表（管理员接口）
     需要管理员权限
     """
     configs = blog_config.get_multi(
@@ -430,6 +430,59 @@ def init_default_configs(
         )
 
 
+# ============ 公开访问接口 ============
+
+@router.get("/public/category/{category}", response_model=List[BlogConfigPublic])
+def get_public_configs_by_category(
+    *,
+    db: Session = Depends(get_db),
+    category: ConfigCategory
+) -> List[BlogConfigPublic]:
+    """
+    根据分类获取公开配置
+    无需认证，用于前端展示
+    """
+    configs = blog_config.get_by_category(db, category=category)
+    public_configs = [c for c in configs if c.is_public and c.is_enabled]
+    
+    return [
+        BlogConfigPublic(
+            config_key=config.config_key,
+            config_value=config.config_value,
+            data_type=config.data_type,
+            display_name=config.display_name,
+            description=config.description
+        )
+        for config in public_configs
+    ]
+
+
+@router.get("/public/key/{config_key}", response_model=BlogConfigPublic)
+def get_public_config_by_key(
+    *,
+    db: Session = Depends(get_db),
+    config_key: str
+) -> BlogConfigPublic:
+    """
+    根据键名获取公开配置
+    无需认证，用于前端展示
+    """
+    config = blog_config.get_by_key(db=db, config_key=config_key)
+    if not config or not config.is_public or not config.is_enabled:
+        raise HTTPException(
+            status_code=404,
+            detail="配置不存在或不可访问"
+        )
+    
+    return BlogConfigPublic(
+        config_key=config.config_key,
+        config_value=config.config_value,
+        data_type=config.data_type,
+        display_name=config.display_name,
+        description=config.description
+    )
+
+
 # 将stats路由移到前面，避免与/{config_id}路由冲突
 @router.get("/stats/", response_model=ConfigStats)
 def get_config_stats(
@@ -438,7 +491,7 @@ def get_config_stats(
     current_user: User = Depends(get_current_active_superuser)
 ) -> ConfigStats:
     """
-    获取配置统计信息
+    获取配置统计信息（管理员接口）
     需要管理员权限
     """
     # 获取所有配置

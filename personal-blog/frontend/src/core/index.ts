@@ -12,7 +12,6 @@ export * from './contracts/IEventBus'
 
 // 实体
 export * from './entities/User'
-export * from './entities/SiteConfig'
 
 // 错误
 export * from './errors/ApplicationError'

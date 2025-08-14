@@ -1,78 +1,163 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { blogConfigAPI } from '@/lib/api/blog-config';
-import { BlogConfigPublic } from '@/types/blog-config';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useBlogConfig } from '@/hooks/use-blog-config';
 
-interface SiteConfig {
-  site_title: string;
-  site_subtitle: string;
-  site_description: string;
-  site_keywords: string;
-  site_author: string;
-  site_logo: string;
-  site_favicon: string;
-  [key: string]: string;
+// 兼容旧接口的类型定义
+interface SiteInfo {
+  title: string;
+  subtitle: string;
+  description: string;
+  keywords: string;
+  logo: string;
+  language: string;
+}
+
+interface SocialLinks {
+  github: string;
+  twitter: string;
+  email: string;
+  linkedin: string;
+  wechat: string;
+  qq: string;
+  weibo: string;
+}
+
+interface SeoSettings {
+  title: string;
+  description: string;
+  keywords: string;
+  author: string;
+  favicon: string;
+  metaAuthor: string;
+  googleAnalytics: string;
+  baiduAnalytics: string;
+}
+
+interface OtherSettings {
+  analytics_id: string;
+  comment_system: string;
+  footer_text: string;
+  icp_number: string;
+  notice: string;
+  copyright: string;
+  icp: string;
+  publicSecurity: string;
 }
 
 interface SiteConfigContextType {
-  config: SiteConfig;
+  config: Record<string, string>;
   loading: boolean;
   error: string | null;
   refreshConfig: () => Promise<void>;
+  // 兼容旧接口的便捷方法
+  getSiteInfo: () => SiteInfo;
+  getSocialLinks: () => SocialLinks;
+  getSeoSettings: () => SeoSettings;
+  getOtherSettings: () => OtherSettings;
 }
-
-const defaultConfig: SiteConfig = {
-  site_title: '个人博客系统',
-  site_subtitle: '分享技术与生活',
-  site_description: '现代化的个人博客平台，支持文章发布、评论互动、分类标签等功能',
-  site_keywords: '博客,文章,技术分享,个人网站',
-  site_author: '博客作者',
-  site_logo: '',
-  site_favicon: '',
-};
 
 const SiteConfigContext = createContext<SiteConfigContextType | undefined>(undefined);
 
 export function SiteConfigProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<SiteConfig>(defaultConfig);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadConfig = async () => {
+  const [config, setConfig] = React.useState<Record<string, string>>({});
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  // 使用公开接口获取配置
+  const fetchPublicConfigs = React.useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const publicConfigs = await blogConfigAPI.getPublicConfigs();
+      // 使用公开接口获取配置
+      const response = await fetch('/api/v1/public/blog-config/configs');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const publicConfigs = await response.json();
       
-      // 将配置数组转换为对象
-      const configObj: SiteConfig = { ...defaultConfig };
-      publicConfigs.forEach((item: BlogConfigPublic) => {
-        configObj[item.config_key] = item.config_value || '';
-      });
+      // 转换为旧格式
+      const configMap = publicConfigs.reduce((acc: Record<string, string>, item: any) => {
+        acc[item.config_key] = item.config_value || '';
+        return acc;
+      }, {});
       
-      setConfig(configObj);
+      setConfig(configMap);
     } catch (err) {
-      console.error('Failed to load site config:', err);
-      setError(err instanceof Error ? err.message : '加载配置失败');
-      // 使用默认配置
-      setConfig(defaultConfig);
+      const errorMessage = err instanceof Error ? err.message : '获取配置失败';
+      setError(errorMessage);
+      console.error('获取公开配置失败:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const refreshConfig = async () => {
-    await loadConfig();
-  };
-
-  useEffect(() => {
-    loadConfig();
   }, []);
 
+  // 初始化时获取配置
+  React.useEffect(() => {
+    fetchPublicConfigs();
+  }, [fetchPublicConfigs]);
+
+  const getConfigValue = (key: string, defaultValue: string = ''): string => {
+    return config[key] || defaultValue;
+  };
+
+  const getSiteInfo = (): SiteInfo => ({
+    title: getConfigValue('site_title', '个人博客'),
+    subtitle: getConfigValue('site_subtitle', '分享技术与生活'),
+    description: getConfigValue('site_description', '这是一个个人技术博客'),
+    keywords: getConfigValue('site_keywords', '博客,技术,编程'),
+    logo: getConfigValue('site_logo', ''),
+    language: getConfigValue('site_language', 'zh-CN')
+  });
+
+  const getSocialLinks = (): SocialLinks => ({
+    github: getConfigValue('social_github', ''),
+    twitter: getConfigValue('social_twitter', ''),
+    email: getConfigValue('social_email', ''),
+    linkedin: getConfigValue('social_linkedin', ''),
+    wechat: getConfigValue('social_wechat', ''),
+    qq: getConfigValue('social_qq', ''),
+    weibo: getConfigValue('social_weibo', '')
+  });
+
+  const getSeoSettings = (): SeoSettings => ({
+    title: getConfigValue('seo_title', getConfigValue('site_title', '个人博客')),
+    description: getConfigValue('seo_description', getConfigValue('site_description', '')),
+    keywords: getConfigValue('seo_keywords', getConfigValue('site_keywords', '')),
+    author: getConfigValue('seo_author', ''),
+    favicon: getConfigValue('seo_favicon', '/favicon.ico'),
+    metaAuthor: getConfigValue('seo_author', ''),
+    googleAnalytics: getConfigValue('analytics_google_id', ''),
+    baiduAnalytics: getConfigValue('analytics_baidu_id', '')
+  });
+
+  const getOtherSettings = (): OtherSettings => ({
+    analytics_id: getConfigValue('analytics_google_id', ''),
+    comment_system: getConfigValue('comment_system', 'none'),
+    footer_text: getConfigValue('footer_copyright', ''),
+    icp_number: getConfigValue('site_icp', ''),
+    notice: getConfigValue('site_notice', ''),
+    copyright: getConfigValue('footer_copyright', ''),
+    icp: getConfigValue('site_icp', ''),
+    publicSecurity: getConfigValue('site_public_security', '')
+  });
+
+  const refreshConfig = async (): Promise<void> => {
+    await fetchPublicConfigs();
+  };
+
   return (
-    <SiteConfigContext.Provider value={{ config, loading, error, refreshConfig }}>
+    <SiteConfigContext.Provider value={{
+      config,
+      loading,
+      error,
+      refreshConfig,
+      getSiteInfo,
+      getSocialLinks,
+      getSeoSettings,
+      getOtherSettings
+    }}>
       {children}
     </SiteConfigContext.Provider>
   );
@@ -86,7 +171,6 @@ export function useSiteConfig() {
   return context;
 }
 
-// 便捷的 Hook 用于获取特定配置值
 export function useConfigValue(key: string, defaultValue: string = '') {
   const { config } = useSiteConfig();
   return config[key] || defaultValue;
