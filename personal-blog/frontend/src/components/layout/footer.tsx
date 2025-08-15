@@ -29,9 +29,9 @@ export function Footer() {
                   e.currentTarget.style.display = 'none';
                 }}
               />
-              <h3 className="font-semibold text-lg">
-                {loading ? '个人博客' : (siteInfo.title || '个人博客')}
-              </h3>
+            <h3 className="font-semibold text-lg">
+              {loading ? '加载中...' : (siteInfo.title || '个人博客')}
+            </h3>
             </div>
             <p className="text-muted-foreground text-sm">
               {loading ? '分享技术与生活' : (siteInfo.subtitle || '分享技术与生活')}

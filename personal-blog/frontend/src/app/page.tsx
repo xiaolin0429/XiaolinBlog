@@ -4,8 +4,6 @@
  */
 
 import React, { Suspense } from "react";
-import { AppProvider } from "../AppProvider";
-import { PublicLayout } from "../presentation/layouts/PublicLayout";
 import { HeroSection } from "../components/home/hero-section";
 import { LatestPosts } from "../components/home/latest-posts";
 import { CategoriesTags } from "../components/home/categories-tags";
@@ -24,32 +22,26 @@ function LoadingSkeleton() {
   );
 }
 
-function HomePageContent() {
-  return (
-    <main className="min-h-screen">
-      {/* Hero 部分 */}
-      <Suspense fallback={<LoadingSkeleton />}>
-        <HeroSection />
-      </Suspense>
-
-      {/* 最新文章部分 */}
-      <Suspense fallback={<LoadingSkeleton />}>
-        <LatestPosts />
-      </Suspense>
-
-      {/* 分类和标签部分 */}
-      <Suspense fallback={<LoadingSkeleton />}>
-        <CategoriesTags />
-      </Suspense>
-    </main>
-  );
-}
-
 export default function HomePage() {
   return (
-    <PublicLayout>
+    <>
       <DynamicMetadata />
-      <HomePageContent />
-    </PublicLayout>
+      <main className="min-h-screen">
+        {/* Hero 部分 */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <HeroSection />
+        </Suspense>
+
+        {/* 最新文章部分 */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <LatestPosts />
+        </Suspense>
+
+        {/* 分类和标签部分 */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <CategoriesTags />
+        </Suspense>
+      </main>
+    </>
   );
 }

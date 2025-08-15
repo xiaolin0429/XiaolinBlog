@@ -4,24 +4,27 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Users, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSiteConfig } from "@/contexts/SiteConfigContext";
+import { useSiteStats } from "@/hooks/use-site-stats";
 
 export function HeroSection() {
   const { config, loading } = useSiteConfig();
+  const { stats: siteStats, loading: statsLoading } = useSiteStats();
+
   const stats = [
     {
       icon: BookOpen,
       label: "文章数量",
-      value: "128",
+      value: statsLoading ? "..." : (siteStats?.posts_count_formatted || "0"),
     },
     {
       icon: Users,
       label: "访问用户",
-      value: "2.5K",
+      value: statsLoading ? "..." : (siteStats?.views_count_formatted || "0"),
     },
     {
       icon: MessageCircle,
       label: "评论数量",
-      value: "456",
+      value: statsLoading ? "..." : (siteStats?.comments_count_formatted || "0"),
     },
   ];
 
@@ -35,18 +38,17 @@ export function HeroSection() {
         <div className="max-w-4xl mx-auto text-center">
           {/* 主标题 */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6">
-            分享
-            <span className="text-primary"> 技术</span>
-            <br />
-            记录
-            <span className="text-primary"> 成长</span>
+            {loading ? 
+              <>分享<span className="text-primary"> 技术</span><br />记录<span className="text-primary"> 成长</span></> :
+              (config.site_title || '分享技术，记录成长')
+            }
           </h1>
           
           {/* 副标题 */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
             {loading ? 
               '加载中...' : 
-              (config.site_description || '在这里，我分享编程心得、技术见解和学习历程，与你一起探索代码世界的无限可能')
+              (config.site_subtitle || config.site_description || '在这里，我分享编程心得、技术见解和学习历程，与你一起探索代码世界的无限可能')
             }
           </p>
           

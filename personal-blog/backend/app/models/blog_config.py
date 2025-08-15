@@ -13,8 +13,9 @@ class ConfigCategory(str, enum.Enum):
     """配置分类枚举"""
     SITE_BASIC = "site_basic"           # 站点基础配置
     SITE_APPEARANCE = "site_appearance"  # 外观主题配置
-    SEO = "seo"                         # SEO配置
+    CONTACT = "contact"                 # 联系方式配置
     SOCIAL = "social"                   # 社交媒体配置
+    SEO = "seo"                         # SEO配置
     COMMENT = "comment"                 # 评论系统配置
     EMAIL = "email"                     # 邮件通知配置
     SYSTEM = "system"                   # 系统配置
@@ -42,7 +43,7 @@ class ConfigGroup(Base):
     id = Column(Integer, primary_key=True, index=True)
     group_key = Column(String(100), unique=True, index=True, nullable=False, comment="分组键名")
     group_name = Column(String(200), nullable=False, comment="分组显示名称")
-    category = Column(SQLEnum(ConfigCategory), nullable=False, comment="所属配置分类")
+    category = Column(String(50), nullable=False, comment="所属配置分类")
     icon_name = Column(String(100), comment="分组图标名称")
     color_scheme = Column(String(100), comment="分组颜色方案")
     description = Column(Text, comment="分组描述")
@@ -63,9 +64,9 @@ class BlogConfig(Base):
     config_key = Column(String(100), unique=True, index=True, nullable=False, comment="配置键名")
     config_value = Column(Text, comment="配置值")
     default_value = Column(Text, comment="默认值")
-    category = Column(SQLEnum(ConfigCategory), nullable=False, comment="配置分类")
+    category = Column(String(50), nullable=False, comment="配置分类")
     group_key = Column(String(100), comment="所属分组键名")
-    data_type = Column(SQLEnum(ConfigDataType), default=ConfigDataType.STRING, comment="数据类型")
+    data_type = Column(String(50), default="string", comment="数据类型")
     
     # 显示相关字段
     display_name = Column(String(200), nullable=False, comment="显示名称")
@@ -117,7 +118,7 @@ class ConfigCache(Base):
     id = Column(Integer, primary_key=True, index=True)
     cache_key = Column(String(200), unique=True, index=True, nullable=False, comment="缓存键名")
     cache_data = Column(JSON, nullable=False, comment="缓存数据")
-    category = Column(SQLEnum(ConfigCategory), comment="配置分类")
+    category = Column(String(50), comment="配置分类")
     expires_at = Column(DateTime(timezone=True), nullable=False, comment="过期时间")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新时间")

@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider";
 import { AppProvider } from "../AppProvider";
 import { SiteConfigProvider } from "../contexts/SiteConfigContext";
+import { PublicLayout } from "../presentation/layouts/PublicLayout";
 import { Toaster } from "sonner";
 
 // 默认的静态元数据（将被动态配置覆盖）
@@ -34,23 +35,14 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <MainLayout>
+              <PublicLayout>
                 {children}
-              </MainLayout>
+              </PublicLayout>
               <Toaster />
             </ThemeProvider>
           </AppProvider>
         </SiteConfigProvider>
       </body>
     </html>
-  );
-}
-
-// 主布局组件
-function MainLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen flex flex-col">
-      {children}
-    </div>
   );
 }

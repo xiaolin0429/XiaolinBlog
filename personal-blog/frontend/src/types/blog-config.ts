@@ -6,8 +6,9 @@
 export enum ConfigCategory {
   SITE_BASIC = 'site_basic',
   SITE_APPEARANCE = 'site_appearance',
-  SEO = 'seo',
+  CONTACT = 'contact',
   SOCIAL = 'social',
+  SEO = 'seo',
   COMMENT = 'comment',
   EMAIL = 'email',
   SYSTEM = 'system'
@@ -164,6 +165,40 @@ export interface ConfigStats {
   categories_count: number;
   groups_count: number;
   last_updated?: string;
+}
+
+// 配置历史记录
+export interface ConfigHistory {
+  id: number;
+  config_key: string;
+  old_value?: string;
+  new_value?: string;
+  change_reason?: string;
+  changed_by?: number;
+  changed_at: string;
+}
+
+// 网站信息聚合响应
+export interface SiteInfoResponse {
+  site: Record<string, string>;
+  seo: Record<string, string>;
+  social: Record<string, string>;
+}
+
+// 图片配置相关接口
+export interface ImageConfigInfo {
+  config: BlogConfig;
+  image?: {
+    id: number;
+    filename: string;
+    display_name?: string;
+    file_url: string;
+    thumbnail_url?: string;
+    width?: number;
+    height?: number;
+    format: string;
+  };
+  has_image: boolean;
 }
 
 // API响应包装

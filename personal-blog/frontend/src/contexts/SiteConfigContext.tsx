@@ -13,14 +13,22 @@ interface SiteInfo {
   language: string;
 }
 
+interface ContactInfo {
+  email: string;
+  phone: string;
+  address: string;
+  wechat: string;
+  qq: string;
+}
+
 interface SocialLinks {
   github: string;
   twitter: string;
-  email: string;
   linkedin: string;
-  wechat: string;
-  qq: string;
+  instagram: string;
+  youtube: string;
   weibo: string;
+  wechat: string;
 }
 
 interface SeoSettings {
@@ -52,6 +60,7 @@ interface SiteConfigContextType {
   refreshConfig: () => Promise<void>;
   // 兼容旧接口的便捷方法
   getSiteInfo: () => SiteInfo;
+  getContactInfo: () => ContactInfo;
   getSocialLinks: () => SocialLinks;
   getSeoSettings: () => SeoSettings;
   getOtherSettings: () => OtherSettings;
@@ -71,7 +80,7 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
       setError(null);
       
       // 使用公开接口获取配置
-      const response = await fetch('/api/v1/public/blog-config/configs');
+      const response = await fetch('http://localhost:8000/api/v1/public/blog-config/configs');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -111,14 +120,22 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
     language: getConfigValue('site_language', 'zh-CN')
   });
 
+  const getContactInfo = (): ContactInfo => ({
+    email: getConfigValue('contact_email', ''),
+    phone: getConfigValue('contact_phone', ''),
+    address: getConfigValue('contact_address', ''),
+    wechat: getConfigValue('contact_wechat', ''),
+    qq: getConfigValue('contact_qq', '')
+  });
+
   const getSocialLinks = (): SocialLinks => ({
     github: getConfigValue('social_github', ''),
     twitter: getConfigValue('social_twitter', ''),
-    email: getConfigValue('social_email', ''),
     linkedin: getConfigValue('social_linkedin', ''),
-    wechat: getConfigValue('social_wechat', ''),
-    qq: getConfigValue('social_qq', ''),
-    weibo: getConfigValue('social_weibo', '')
+    instagram: getConfigValue('social_instagram', ''),
+    youtube: getConfigValue('social_youtube', ''),
+    weibo: getConfigValue('social_weibo', ''),
+    wechat: getConfigValue('contact_wechat', '')
   });
 
   const getSeoSettings = (): SeoSettings => ({
@@ -154,6 +171,7 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
       error,
       refreshConfig,
       getSiteInfo,
+      getContactInfo,
       getSocialLinks,
       getSeoSettings,
       getOtherSettings
