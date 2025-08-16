@@ -75,7 +75,7 @@ export function RecentPosts({ posts }: RecentPostsProps) {
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/admin/posts/${post.id}/edit`}>
+                  <Link href={`/admin/posts/${post.id}/editor`}>
                     编辑
                   </Link>
                 </Button>

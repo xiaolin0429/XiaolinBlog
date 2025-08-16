@@ -3,10 +3,10 @@ import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider";
 import { AppProvider } from "../AppProvider";
 import { SiteConfigProvider } from "../contexts/SiteConfigContext";
-import { PublicLayout } from "../presentation/layouts/PublicLayout";
+import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import { Toaster } from "sonner";
 
-// 默认的静态元数据（将被动态配置覆盖）
+// 默认的静态元数据
 export const metadata: Metadata = {
   title: "个人博客系统",
   description: "现代化的个人博客平台，支持文章发布、评论互动、分类标签等功能",
@@ -35,9 +35,9 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <PublicLayout>
+              <LayoutWrapper>
                 {children}
-              </PublicLayout>
+              </LayoutWrapper>
               <Toaster />
             </ThemeProvider>
           </AppProvider>

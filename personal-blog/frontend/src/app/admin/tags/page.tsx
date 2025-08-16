@@ -213,7 +213,8 @@ export default function TagsPage() {
 
   return (
     <AuthGuard requireAdmin>
-      <div className="space-y-6">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="space-y-6">
         {/* 页面标题 */}
         <div className="flex items-center justify-between">
           <div>
@@ -423,6 +424,7 @@ export default function TagsPage() {
             <TagForm isEdit />
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </AuthGuard>
   );

@@ -487,7 +487,7 @@ export default function PostsManagePage() {
                           查看
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push(`/admin/posts/${post.id}/edit`)}
+                          onClick={() => router.push(`/admin/posts/${post.id}/editor`)}
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           编辑

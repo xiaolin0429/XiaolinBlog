@@ -141,7 +141,8 @@ export default function CommentsPage() {
 
   return (
     <AuthGuard requireAdmin>
-      <div className="space-y-6">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="space-y-6">
         {/* 页面标题 */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">评论管理</h1>
@@ -312,6 +313,7 @@ export default function CommentsPage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </AuthGuard>
   );

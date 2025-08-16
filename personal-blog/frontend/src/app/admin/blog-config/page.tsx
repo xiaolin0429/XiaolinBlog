@@ -9,7 +9,8 @@ import { Settings } from 'lucide-react';
 export default function BlogConfigPage() {
   return (
     <AuthGuard requireAdmin>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="space-y-6">
         {/* 页面头部 */}
         <div className="flex items-center space-x-2">
           <Settings className="h-6 w-6" />
@@ -23,6 +24,7 @@ export default function BlogConfigPage() {
         
         {/* 配置管理器 */}
         <BlogConfigManager />
+        </div>
       </div>
     </AuthGuard>
   );

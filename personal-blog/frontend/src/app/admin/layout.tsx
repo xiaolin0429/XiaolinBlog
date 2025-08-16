@@ -244,8 +244,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* 页面内容 */}
-        <main className="min-h-[calc(100vh-73px)]">
-          {children}
+        <main className="min-h-[calc(100vh-73px)] bg-background">
+          <div className="h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>
