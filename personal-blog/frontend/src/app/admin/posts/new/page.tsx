@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RichTextEditor } from '@/components/editor/rich-text-editor';
+import { RichTextEditor } from '@/components/editor/RichTextEditor';
 import { ArrowLeft, Save, Eye, Upload, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { postsAPI, type PostCreate } from '@/lib/api/posts';
@@ -283,8 +283,10 @@ function NewPostPageContent() {
             <CardContent>
               <RichTextEditor
                 value={formData.content}
-                onChange={(value) => handleFieldChange('content', value)}
+                onChange={(value: string) => handleFieldChange('content', value)}
                 placeholder="开始撰写您的文章..."
+                compact={false}
+                toolbarPosition="top"
               />
             </CardContent>
           </Card>

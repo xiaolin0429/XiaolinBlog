@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { usePostEditor } from '@/hooks/use-post-editor';
-import { ContentEditor } from '@/components/editor/content-editor';
-import { EditorToolbar } from '@/components/editor/editor-toolbar';
+import { RichTextEditor } from '@/components/editor/RichTextEditor';
 import { PostConfigDialog } from '@/components/editor/post-config-dialog';
 import { EditorSkeleton } from '@/components/editor/editor-skeleton';
 import { EditorStatusBar } from '@/components/editor/save-status';
@@ -220,14 +219,15 @@ function EditorPageContent() {
       )}
 
       {/* 主编辑区域 - 占满剩余空间 */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ContentEditor
-          formData={formData}
-          onUpdateField={updateField}
-          onSave={handleSaveContent}
-          saving={saving}
-          lastSaved={lastSaved}
+      <div className="flex-1 flex flex-col overflow-hidden p-4">
+        <RichTextEditor
+          value={formData.content}
+          onChange={(value: string) => updateField('content', value)}
+          placeholder="开始写作吧... 支持 Markdown 格式"
+          showWordCount={true}
           className="h-full"
+          compact={false}
+          toolbarPosition="top"
         />
       </div>
 
