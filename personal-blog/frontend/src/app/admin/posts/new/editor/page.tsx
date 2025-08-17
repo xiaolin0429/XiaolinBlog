@@ -1,4 +1,4 @@
-    "use client"
+"use client"
 
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -20,9 +20,7 @@ import { toast } from 'sonner';
 
 function EditorPageContent() {
   const router = useRouter();
-  const params = useParams();
-  const postId = params.id === 'new' ? undefined : parseInt(params.id as string);
-  const isNewPost = params.id === 'new';
+  const isNewPost = true; // 新建文章模式
 
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
@@ -46,23 +44,18 @@ function EditorPageContent() {
     createTag,
     clearValidationErrors,
   } = usePostEditor({ 
-    postId,
-    autoSave: !isNewPost, // 新建文章不自动保存
-    autoSaveInterval: 30000 // 30秒自动保存
+    postId: undefined, // 新建文章没有 postId
+    autoSave: false, // 新建文章不自动保存
+    autoSaveInterval: 30000
   });
 
-  // 处理保存内容并弹出配置弹窗
+  // 处理保存内容并跳转到配置页面
   const handleSaveContent = async (): Promise<boolean> => {
     const result = await saveContent();
-    if (result.success) {
-      if (isNewPost && result.postId) {
-        // 新建文章保存成功后，跳转到配置页面
-        router.push(`/admin/posts/${result.postId}/config`);
-        return true;
-      } else {
-        // 编辑现有文章，弹出配置弹窗
-        setShowConfigDialog(true);
-      }
+    if (result.success && result.postId) {
+      // 新建文章保存成功后，跳转到配置页面
+      router.push(`/admin/posts/${result.postId}/config`);
+      return true;
     }
     return result.success;
   };
@@ -89,26 +82,17 @@ function EditorPageContent() {
 
   // 处理预览
   const handlePreview = () => {
-    if (isNewPost) {
-      // 新建文章需要先保存才能预览
-      if (formData.slug) {
-        window.open(`/posts/${formData.slug}`, '_blank');
-      } else {
-        toast.error('请先保存文章才能预览');
-      }
-    } else if (postId) {
-      window.open(`/posts/${postId}`, '_blank');
+    if (formData.slug) {
+      window.open(`/posts/${formData.slug}`, '_blank');
+    } else {
+      toast.error('请先保存文章才能预览');
     }
   };
 
   // 处理模式切换
   const handleToggleMode = () => {
-    if (isNewPost) {
-      // 新建文章需要先保存才能进入配置模式
-      handleSaveContent();
-    } else {
-      router.push(`/admin/posts/${postId}/config`);
-    }
+    // 新建文章需要先保存才能进入配置模式
+    handleSaveContent();
   };
 
   // 处理返回操作
@@ -155,20 +139,14 @@ function EditorPageContent() {
               返回
             </Button>
             <div className="flex flex-col">
-              <h1 className="text-lg font-semibold">
-                {isNewPost ? '创建文章' : '文章编辑'}
-              </h1>
+              <h1 className="text-lg font-semibold">创建文章</h1>
               <p className="text-xs text-muted-foreground">专注写作模式</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* 文章状态 */}
-            <Badge variant={formData.status === 'published' ? 'default' : 'secondary'}>
-              {formData.status === 'draft' && '草稿'}
-              {formData.status === 'published' && '已发布'}
-              {formData.status === 'archived' && '已归档'}
-            </Badge>
+            <Badge variant="secondary">草稿</Badge>
 
             {/* 保存状态 */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -195,7 +173,7 @@ function EditorPageContent() {
                 variant="outline"
                 size="sm"
                 onClick={handlePreview}
-                disabled={!postId}
+                disabled={!formData.slug}
                 className="gap-2"
               >
                 <Eye className="h-4 w-4" />
@@ -254,22 +232,22 @@ function EditorPageContent() {
       </div>
 
       {/* 配置弹窗 */}
-        <PostConfigDialog
-          open={showConfigDialog}
-          onOpenChange={setShowConfigDialog}
-          formData={formData}
-          categories={categories}
-          tags={tags}
-          selectedTags={selectedTags}
-          onUpdateField={updateField}
-          onAddTag={addTag}
-          onRemoveTag={removeTag}
-          onCreateTag={createTag}
-          onSaveConfig={handleSaveConfig}
-          onSaveAll={handleSaveAll}
-          onSkipConfig={() => setShowConfigDialog(false)}
-          saving={saving}
-        />
+      <PostConfigDialog
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        formData={formData}
+        categories={categories}
+        tags={tags}
+        selectedTags={selectedTags}
+        onUpdateField={updateField}
+        onAddTag={addTag}
+        onRemoveTag={removeTag}
+        onCreateTag={createTag}
+        onSaveConfig={handleSaveConfig}
+        onSaveAll={handleSaveAll}
+        onSkipConfig={() => setShowConfigDialog(false)}
+        saving={saving}
+      />
 
       {/* 放弃更改确认弹窗 */}
       <DiscardChangesDialog
@@ -281,7 +259,7 @@ function EditorPageContent() {
   );
 }
 
-export default function EditorPage() {
+export default function NewPostEditorPage() {
   return (
     <AuthGuard>
       <EditorPageContent />

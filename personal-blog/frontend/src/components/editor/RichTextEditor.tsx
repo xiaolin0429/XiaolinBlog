@@ -120,7 +120,7 @@ export function RichTextEditor({
 
   return (
     <ToolProvider>
-      <div className={`border rounded-lg flex flex-col ${className}`}>
+      <div className={`border rounded-lg flex flex-col focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-all ${className}`}>
         {/* 顶部工具栏 */}
         {toolbarPosition === 'top' && (
           <Toolbar
@@ -182,7 +182,7 @@ export function RichTextEditor({
                 onSelect={handleSelectionChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className="h-full border-0 resize-none focus-visible:ring-0 rounded-none"
+                className="h-full resize-none rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </TabsContent>
             

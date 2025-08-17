@@ -47,7 +47,7 @@ interface UsePostEditorReturn {
   
   // 操作方法
   updateField: (field: keyof PostFormData, value: any) => void;
-  saveContent: () => Promise<boolean>;
+  saveContent: () => Promise<{success: boolean, postId?: number}>;
   saveConfig: () => Promise<boolean>;
   saveAll: () => Promise<boolean>;
   fetchPost: () => Promise<void>;
@@ -225,10 +225,10 @@ export function usePostEditor(options: UsePostEditorOptions = {}): UsePostEditor
   }, []);
 
   // 保存内容
-  const saveContent = useCallback(async (): Promise<boolean> => {
+  const saveContent = useCallback(async (): Promise<{success: boolean, postId?: number}> => {
     if (!validateContent()) {
       toast.error('请检查表单内容');
-      return false;
+      return { success: false };
     }
     
     try {
@@ -244,6 +244,9 @@ export function usePostEditor(options: UsePostEditorOptions = {}): UsePostEditor
       if (postId) {
         await postsAPI.updatePost(postId, contentData);
         toast.success('内容保存成功');
+        setLastSaved(new Date());
+        lastContentRef.current = formData.content;
+        return { success: true, postId };
       } else {
         const newPost = await postsAPI.createPost({
           ...contentData,
@@ -251,19 +254,17 @@ export function usePostEditor(options: UsePostEditorOptions = {}): UsePostEditor
           status: 'draft',
           is_featured: false
         });
-        // 这里可能需要更新postId或重定向
         toast.success('文章创建成功');
+        setLastSaved(new Date());
+        lastContentRef.current = formData.content;
+        return { success: true, postId: newPost.id };
       }
-      
-      setLastSaved(new Date());
-      lastContentRef.current = formData.content;
-      return true;
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '保存失败';
       setError(errorMessage);
       toast.error(errorMessage);
-      return false;
+      return { success: false };
     } finally {
       setSaving(false);
     }
@@ -406,10 +407,19 @@ export function usePostEditor(options: UsePostEditorOptions = {}): UsePostEditor
 
   // 初始化数据
   useEffect(() => {
-    fetchCategoriesAndTags();
-    if (postId) {
-      fetchPost();
-    }
+    const initializeData = async () => {
+      setLoading(true);
+      try {
+        await fetchCategoriesAndTags();
+        if (postId) {
+          await fetchPost();
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeData();
   }, [postId, fetchPost, fetchCategoriesAndTags]);
 
   // 更新选中标签
