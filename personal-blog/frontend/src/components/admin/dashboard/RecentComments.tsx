@@ -16,6 +16,10 @@ interface Comment {
     username: string;
     avatar?: string | null;
   };
+  post?: {
+    id: number;
+    title: string;
+  };
 }
 
 interface RecentCommentsProps {
@@ -95,7 +99,7 @@ export function RecentComments({ comments }: RecentCommentsProps) {
                       {comment.content}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      评论于: 文章ID {comment.post_id}
+                      评论于: {comment.post?.title || `文章ID ${comment.post_id}`}
                     </p>
                   </div>
                 </div>

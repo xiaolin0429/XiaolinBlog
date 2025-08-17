@@ -85,7 +85,8 @@ class BlogConfig(Base):
     sort_order = Column(Integer, default=0, comment="排序顺序")
     
     # 版本控制
-    version = Column(Integer, default=1, comment="配置版本")
+    version = Column(Integer, default=1, nullable=False, comment="配置版本")
+    
     
     # 时间戳
     created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")

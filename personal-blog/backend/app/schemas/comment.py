@@ -5,6 +5,7 @@ from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from .user import User
+from .post import PostBase
 
 
 class CommentBase(BaseModel):
@@ -49,6 +50,7 @@ class CommentInDBBase(CommentBase):
 class Comment(CommentInDBBase):
     """返回给客户端的评论模式"""
     author: Optional[User] = None
+    post: Optional["PostBase"] = None
     replies: Optional[List["Comment"]] = []
 
 

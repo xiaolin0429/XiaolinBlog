@@ -2,7 +2,7 @@
 评论CRUD操作
 """
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, desc, func
 
 from app.models.comment import Comment

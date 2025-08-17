@@ -337,7 +337,7 @@ class CommentService(StandardService):
         parent_id: Optional[int] = None
     ) -> List[Comment]:
         """
-        根据多个条件过滤获取评论列表
+        根据多个条件过滤获取评论列表，包含文章和作者信息
         
         Args:
             db: 数据库会话
@@ -352,8 +352,12 @@ class CommentService(StandardService):
             List[Comment]: 评论列表
         """
         from sqlalchemy import and_
+        from sqlalchemy.orm import joinedload
         
-        query = db.query(Comment)
+        query = db.query(Comment).options(
+            joinedload(Comment.post),
+            joinedload(Comment.author)
+        )
         
         # 构建过滤条件
         conditions = []
