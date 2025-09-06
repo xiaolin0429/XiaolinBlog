@@ -3,11 +3,8 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { usePostEditor } from '@/hooks/use-post-editor';
-import { RichTextEditor } from '@/components/editor/RichTextEditor';
+import SimpleEditor from '@/components/editor/SimpleEditor';
 import { PostConfigDialog } from '@/components/editor/post-config-dialog';
-import { EditorSkeleton } from '@/components/editor/editor-skeleton';
-import { EditorStatusBar } from '@/components/editor/save-status';
-import { useKeyboardShortcuts } from '@/components/editor/keyboard-shortcuts';
 import { DiscardChangesDialog } from '@/components/editor/confirm-dialog';
 import { FormErrors } from '@/components/editor/form-errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -126,17 +123,12 @@ function EditorPageContent() {
     router.push('/admin/posts');
   };
 
-  // 键盘快捷键
-  useKeyboardShortcuts({
-    onSave: handleSaveContent,
-    onSaveConfig: () => saveConfig(),
-    onPreview: handlePreview,
-    onToggleMode: handleToggleMode,
-    disabled: loading || saving
-  });
-
   if (loading) {
-    return <EditorSkeleton />;
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   return (
@@ -242,14 +234,10 @@ function EditorPageContent() {
 
       {/* 主编辑区域 - 占满剩余空间 */}
       <div className="flex-1 flex flex-col overflow-hidden p-4">
-        <RichTextEditor
-          value={formData.content}
+        <SimpleEditor
+          content={formData.content}
           onChange={(value: string) => updateField('content', value)}
-          placeholder="开始写作吧... 支持 Markdown 格式"
-          showWordCount={true}
-          className="h-full"
-          compact={false}
-          toolbarPosition="top"
+          placeholder="开始写作吧... 支持富文本编辑"
         />
       </div>
 

@@ -273,8 +273,8 @@ export default function PostDetail({ slug }: PostDetailProps) {
       <div className="prose prose-lg max-w-none mb-12">
         {post.content ? (
           <div
-            className="text-foreground leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br>') }}
+            className="text-foreground leading-relaxed prose prose-lg prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-pre:bg-muted prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground prose-a:text-primary hover:prose-a:text-primary/80"
+            dangerouslySetInnerHTML={{ __html: post.content }}
           />
         ) : post.excerpt ? (
           <div className="text-foreground leading-relaxed">

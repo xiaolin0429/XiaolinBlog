@@ -68,10 +68,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             # 获取响应数据
             response_data = await self._get_response_data(response)
             
-            print(f"[DEBUG] 开始记录访问日志到数据库")
-            
-            # 记录访问日志（包含文件和数据库）
-            self.access_logger.log_request(
+            # 记录成功访问日志
+            await self._record_access_log(
                 method=method,
                 url=url,
                 status_code=response.status_code,
@@ -79,14 +77,11 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 user_id=user_id,
                 ip_address=ip_address,
                 user_agent=user_agent,
-                path=url,
                 request_id=request_id,
                 request_params=request_params,
                 request_body=request_body,
                 referer=referer
             )
-            
-            print(f"[DEBUG] 访问日志记录完成")
             
             return response
             
@@ -109,8 +104,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 user_id=user_id
             )
             
-            # 记录错误访问日志（包含文件和数据库）
-            self.access_logger.log_request(
+            # 记录错误访问日志
+            await self._record_access_log(
                 method=method,
                 url=url,
                 status_code=500,
@@ -118,7 +113,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 user_id=user_id,
                 ip_address=ip_address,
                 user_agent=user_agent,
-                path=url,
                 request_id=request_id,
                 request_params=request_params,
                 request_body=request_body,
@@ -126,6 +120,41 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             )
             
             raise
+    
+    async def _record_access_log(
+        self,
+        method: str,
+        url: str,
+        status_code: int,
+        response_time: float,
+        user_id: Optional[str],
+        ip_address: str,
+        user_agent: str,
+        request_id: str,
+        request_params: Optional[Dict[str, Any]],
+        request_body: Optional[Dict[str, Any]],
+        referer: Optional[str]
+    ):
+        """统一的访问日志记录方法"""
+        print(f"[DEBUG] 开始记录访问日志到数据库")
+        
+        # 记录访问日志（包含文件和数据库）
+        self.access_logger.log_request(
+            method=method,
+            url=url,
+            status_code=status_code,
+            response_time=response_time,
+            user_id=user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            path=url,
+            request_id=request_id,
+            request_params=request_params,
+            request_body=request_body,
+            referer=referer
+        )
+        
+        print(f"[DEBUG] 访问日志记录完成")
     
     def _get_client_ip(self, request: Request) -> str:
         """获取客户端IP地址"""

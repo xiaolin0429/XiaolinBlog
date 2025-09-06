@@ -18,6 +18,7 @@ class PostBase(BaseModel):
     featured_image: Optional[str] = None
     status: str = "draft"  # draft, published, archived
     is_featured: bool = False
+    content_format: str = "html"  # html, markdown
 
 
 class PostCreate(PostBase):
@@ -37,6 +38,7 @@ class PostUpdate(BaseModel):
     is_featured: Optional[bool] = None
     category_id: Optional[int] = None
     tag_ids: Optional[List[int]] = None
+    content_format: Optional[str] = None
 
 
 class PostInDBBase(PostBase):

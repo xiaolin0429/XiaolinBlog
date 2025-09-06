@@ -1,9 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import '../styles/_variables.scss';
+@import '../styles/_keyframe-animations.scss';
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
+/* Tailwind theme configuration */
+:root {
+  /* Theme colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -41,9 +43,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-}
 
-:root {
+  /* Base theme variables */
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -112,11 +113,19 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Dark mode custom variant support */
+.dark * {
+  /* This replaces @custom-variant dark (&:is(.dark *)); */
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
