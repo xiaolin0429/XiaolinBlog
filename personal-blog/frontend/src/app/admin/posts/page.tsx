@@ -261,7 +261,7 @@ export default function PostsManagePage() {
           <p className="text-muted-foreground">管理您的博客文章</p>
         </div>
         
-        <Button onClick={() => router.push('/admin/posts/new/editor')}>
+        <Button onClick={() => router.push('/admin/posts/editor')}>
           <Plus className="h-4 w-4 mr-2" />
           创建文章
         </Button>
@@ -487,7 +487,7 @@ export default function PostsManagePage() {
                           查看
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => router.push(`/admin/posts/${post.id}/editor`)}
+                          onClick={() => router.push(`/admin/posts/editor?id=${post.id}`)}
                         >
                           <Edit className="h-4 w-4 mr-2" />
                           编辑

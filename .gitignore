@@ -383,3 +383,4 @@ config.local.js
 
 # 项目特定的忽略文件
 # 如果有其他需要忽略的文件，请在下面添加
+.trae/rules/project_rules.md

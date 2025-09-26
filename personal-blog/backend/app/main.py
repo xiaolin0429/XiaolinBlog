@@ -78,13 +78,10 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-# 添加日志中间件
-app.add_middleware(LoggingMiddleware)
-
-# 设置CORS - 更详细的配置
+# 设置CORS - 必须在其他中间件之前
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # 移除通配符，明确指定前端域名
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=[
@@ -100,6 +97,9 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=3600,  # 预检请求缓存时间
 )
+
+# 添加日志中间件
+app.add_middleware(LoggingMiddleware)
 
 # 应用启动事件
 @app.on_event("startup")

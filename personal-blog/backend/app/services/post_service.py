@@ -50,7 +50,7 @@ class PostService(StandardService):
             "tag_count": len(tag_ids) if tag_ids else 0
         })
         
-        def _create_post():
+        def _create_post(transaction_db):
             # 检查slug唯一性
             if post_in.slug and self.crud.get_by_slug(db, slug=post_in.slug):
                 raise BusinessError("文章slug已存在")
@@ -58,7 +58,15 @@ class PostService(StandardService):
             # 创建文章
             post_data = post_in.dict()
             post_data["author_id"] = author_id
-            post = self.crud.create(db, obj_in=PostCreate(**post_data))
+            
+            # 移除不属于Post模型的字段，直接创建Post对象
+            post_create_data = {k: v for k, v in post_data.items() if k != "tag_ids"}
+                
+            # 直接使用字典创建，避免PostCreate schema的tag_ids字段问题
+            from ..models.post import Post
+            post = Post(**post_create_data)
+            db.add(post)
+            db.flush()  # 获取ID但不提交事务
             
             # 添加标签关联
             if tag_ids:
@@ -102,21 +110,21 @@ class PostService(StandardService):
             "tag_count": len(tag_ids) if tag_ids else 0
         })
         
-        def _update_post():
+        def _update_post(transaction_db):
             # 更新基本信息
-            updated_post = self.crud.update(db, db_obj=post, obj_in=post_in)
+            updated_post = self.crud.update(transaction_db, db_obj=post, obj_in=post_in)
             
             # 处理标签关联
             if tag_ids is not None:
                 tags = []
                 for tag_id in tag_ids:
-                    tag = tag_crud.get(db, id=tag_id)
+                    tag = tag_crud.get(transaction_db, id=tag_id)
                     if tag:
                         tags.append(tag)
                 
                 updated_post.tags = tags
-                db.commit()
-                db.refresh(updated_post)
+                transaction_db.commit()
+                transaction_db.refresh(updated_post)
             
             return updated_post
         

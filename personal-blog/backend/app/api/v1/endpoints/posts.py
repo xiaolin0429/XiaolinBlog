@@ -82,7 +82,7 @@ def create_post(
     """
     创建新文章
     """
-    post = create_post_with_tags(db=db, obj_in=post_in, owner_id=current_user.id)
+    post = create_post_with_tags(db=db, post_in=post_in, author_id=current_user.id)
     return post
 
 
@@ -102,7 +102,7 @@ def update_post(
         raise HTTPException(status_code=404, detail="文章不存在")
     if not is_superuser(current_user) and (post.author_id != current_user.id):
         raise HTTPException(status_code=400, detail="权限不足")
-    post = update_post_with_tags(db=db, db_obj=post, obj_in=post_in)
+    post = update_post_with_tags(db=db, post=post, post_in=post_in)
     return post
 
 
